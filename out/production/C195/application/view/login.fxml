@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="200.0" prefWidth="360.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.controller.LoginController">
+<BorderPane fx:id="borderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="200.0" prefWidth="360.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.controller.LoginController">
    <center>
       <VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="128.0" prefWidth="128.0" spacing="10.0" BorderPane.alignment="CENTER">
          <children>
@@ -25,8 +25,8 @@
                   <Insets />
                </VBox.margin>
             </ImageView>
-            <TextField fx:id="usernameTxt" onAction="#onActionUsername" promptText="Username" />
-            <PasswordField fx:id="passwordTxt" onAction="#onActionPassword" promptText="Password" />
+            <TextField fx:id="usernameTxt" onAction="#onActionUsername" pickOnBounds="false" promptText="Username" />
+            <PasswordField fx:id="passwordTxt" onAction="#onActionPassword" pickOnBounds="false" promptText="Password" />
             <Button fx:id="loginBtn" mnemonicParsing="false" onAction="#onActionLogin" text="Login" />
          </children>
       </VBox>
@@ -39,7 +39,7 @@
          <children>
             <Pane nodeOrientation="LEFT_TO_RIGHT" prefHeight="200.0" prefWidth="200.0">
                <children>
-                  <Label fx:id="zoneIdTxt" alignment="BOTTOM_LEFT" text="America/New York" />
+                  <Label fx:id="zoneIdTxt" alignment="BOTTOM_LEFT" text="ZoneId" />
                </children>
                <HBox.margin>
                   <Insets left="8.0" />

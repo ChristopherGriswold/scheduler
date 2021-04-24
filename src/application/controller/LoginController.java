@@ -5,22 +5,32 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
 
 import java.net.URL;
 import java.sql.SQLException;
 import java.time.ZoneId;
+import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.concurrent.*;
 
 public class LoginController implements Initializable {
     private static Long userAuth;
+    private static ResourceBundle rb;
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        System.out.println(ZoneId.systemDefault());
+//        rb = ResourceBundle.getBundle("application.resources.strings", new Locale("fr"));
+        rb = ResourceBundle.getBundle("application.resources.strings", Locale.getDefault());
+        loginBtn.setText(rb.getString("Login"));
+        usernameTxt.setPromptText(rb.getString("Username"));
+        passwordTxt.setPromptText(rb.getString("Password"));
+        zoneIdTxt.setText(ZoneId.systemDefault().toString());
+        Platform.runLater(() -> borderPane.requestFocus());
     }
 
     @FXML
     void onActionLogin(ActionEvent event) {
+        borderPane.requestFocus();
         loginBtn.setDisable(true);
         loginBtn.setVisible(false);
         errorLbl.setVisible(false);
@@ -32,14 +42,16 @@ public class LoginController implements Initializable {
             while (!authToken.isDone()) {}
             try {
                 if ((userAuth = authToken.get()) != null) {
-                    Platform.runLater(() -> errorLbl.setText("Login SUCCESS"));
+                    Platform.runLater(() -> errorLbl.setText(rb.getString("Login Success")));
                 } else {
-                    Platform.runLater(() -> errorLbl.setText("Login FAILED"));
+                    Platform.runLater(() -> errorLbl.setText(rb.getString("Login Failed")));
                 }
-                Platform.runLater(() -> loginBtn.setDisable(false));
-                Platform.runLater(() -> loginBtn.setVisible(true));
-                Platform.runLater(() -> errorLbl.setVisible(true));
-                Platform.runLater(() -> progressBar.setVisible(false));
+                Platform.runLater(() -> {
+                    loginBtn.setDisable(false);
+                    loginBtn.setVisible(true);
+                    errorLbl.setVisible(true);
+                    progressBar.setVisible(false);
+                });
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
@@ -50,13 +62,19 @@ public class LoginController implements Initializable {
 
     @FXML
     void onActionPassword(ActionEvent event) {
-
+        borderPane.requestFocus();
+        loginBtn.fire();
     }
 
     @FXML
     void onActionUsername(ActionEvent event) {
-
+        borderPane.requestFocus();
+        loginBtn.fire();
     }
+
+    @FXML
+    private BorderPane borderPane;
+
     @FXML
     private TextField usernameTxt;
 
