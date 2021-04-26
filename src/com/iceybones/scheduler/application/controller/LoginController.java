@@ -40,7 +40,8 @@ public class LoginController implements Initializable {
         loginBtn.setVisible(false);
         errorLbl.setVisible(false);
         progressBar.setVisible(true);
-        Runnable getAuth = () -> {
+        var service = Executors.newSingleThreadExecutor();
+        service.submit(() -> {
             try {
                 if (Database.authenticate(usernameTxt.getText(), passwordTxt.getText())) {
                     Platform.runLater(() -> ApplicationManager.setScene("main"));
@@ -54,46 +55,11 @@ public class LoginController implements Initializable {
                     progressBar.setVisible(false);
                 });
             } catch (SQLException e) {
-                e.printStackTrace();
+                Platform.runLater(() -> errorLbl.setText(rb.getString("Database Error")));
             }
-        };
-        var service = Executors.newSingleThreadExecutor();
-        service.submit(getAuth);
+        });
         service.shutdown();
     }
-
-//    @FXML
-//    void onActionLogin(ActionEvent event) {
-//        borderPane.requestFocus();
-//        loginBtn.setDisable(true);
-//        loginBtn.setVisible(false);
-//        errorLbl.setVisible(false);
-//        progressBar.setVisible(true);
-//        var service = Executors.newFixedThreadPool(2);
-//        Callable<Boolean> tryLogin = () -> Database.authenticate(usernameTxt.getText(), passwordTxt.getText());
-//        Future<Boolean> isSuccessful = service.submit(tryLogin);
-//        Runnable waitForAuth = () -> {
-//            while (!isSuccessful.isDone()) {}
-//            try {
-//                if ((isSuccessful.get() != null && isSuccessful.get())) {
-//                    Platform.runLater(() -> ApplicationManager.setScene("main"));
-//                } else {
-//                    Platform.runLater(() -> errorLbl.setText(rb.getString("Login Failed")));
-//                }
-//                Platform.runLater(() -> {
-//                    loginBtn.setDisable(false);
-//                    loginBtn.setVisible(true);
-//                    errorLbl.setVisible(true);
-//                    progressBar.setVisible(false);
-//                });
-//            } catch (InterruptedException | ExecutionException e) {
-//                e.printStackTrace();
-//            }
-//        };
-//        service.submit(waitForAuth);
-//        service.shutdown();
-//    }
-
 
     @FXML
     void onActionPassword(ActionEvent event) {

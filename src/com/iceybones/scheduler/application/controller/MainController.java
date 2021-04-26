@@ -10,6 +10,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 
 import java.net.URL;
@@ -58,10 +59,14 @@ public class MainController implements Initializable {
         custPhoneCol.setCellValueFactory(new PropertyValueFactory<>("phone"));
         Runnable getCustomers = () -> {
             try {
+                Platform.runLater(() -> custTableProgress.setVisible(true));
                 List<Customer> customers = Database.getCustomers();
+                custTableView.getItems().clear();
                 for (var customer : customers) {
                     custTableView.getItems().add(customer);
                 }
+                Platform.runLater(custTableView::refresh);
+                Platform.runLater(() -> custTableProgress.setVisible(false));
             } catch (Database.NotAuthorizedException | SQLException e) {
                 e.printStackTrace();
             }
@@ -83,10 +88,13 @@ public class MainController implements Initializable {
         appCustIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
         Runnable getAppointments = () -> {
             try {
+                Platform.runLater(() -> appTableProgress.setVisible(true));
                 List<Appointment> appointments = Database.getAppointments();
                 for (var app : appointments) {
                     appTableView.getItems().add(app);
                 }
+                Platform.runLater(appTableView::refresh);
+                Platform.runLater(() -> appTableProgress.setVisible(false));
             } catch (Database.NotAuthorizedException | SQLException e) {
                 e.printStackTrace();
             }
@@ -172,11 +180,14 @@ public class MainController implements Initializable {
     private void confirmAddCustomer(Customer customer) {
         Runnable putCustomer = () -> {
             try {
+                Platform.runLater(() -> custTableProgress.setVisible(true));
                 boolean isSuccessful = Database.insertCustomer(customer);
                 if (isSuccessful) {
+                    notify(customer.getCustomerName() + " has been added to the database.", addImg);
                     clearCustToolDrawer();
                     populateCustomerTable();
                 }
+                Platform.runLater(() -> custTableProgress.setVisible(false));
             } catch (Database.NotAuthorizedException | SQLException e) {
                 e.printStackTrace();
             }
@@ -189,13 +200,16 @@ public class MainController implements Initializable {
     private void confirmDeleteCustomer(Customer customer) {
         Runnable deleteCustomer = () -> {
             try {
+                Platform.runLater(() -> custTableProgress.setVisible(true));
                 boolean isSuccessful = Database.deleteCustomer(customer);
                 if (isSuccessful) {
                     clearCustToolDrawer();
-                    populateCustomerTable();
+                    notify(customer.getCustomerName() + " has been removed from the database.", deleteImg);
+                    Platform.runLater(() -> custTableView.getItems().remove(customer));
                 }
+                Platform.runLater(() -> custTableProgress.setVisible(false));
             } catch (Database.NotAuthorizedException | SQLException e) {
-                e.printStackTrace();
+                notify(e.getMessage(), errorImg);
             }
         };
         var service = Executors.newSingleThreadExecutor();
@@ -203,20 +217,22 @@ public class MainController implements Initializable {
         service.shutdown();
     }
 
-    private void confirmUpdateCustomer(Customer customer) {
-        Runnable updateCustomer = () -> {
+    private void confirmUpdateCustomer(Customer newCust, Customer original) {
+        var service = Executors.newSingleThreadExecutor();
+        service.submit(() -> {
             try {
-                boolean isSuccessful = Database.updateCustomer(customer);
+                Platform.runLater(() -> custTableProgress.setVisible(true));
+                boolean isSuccessful = Database.updateCustomer(newCust);
                 if (isSuccessful) {
                     clearCustToolDrawer();
-                    populateCustomerTable();
+                    notify("Customer record has been updated.", editImg);
+                    custTableView.getItems().set(custTableView.getItems().indexOf(original), newCust);
                 }
+                Platform.runLater(() -> custTableProgress.setVisible(false));
             } catch (Database.NotAuthorizedException | SQLException e) {
-                e.printStackTrace();
+                notify(e.getMessage(), errorImg);
             }
-        };
-        var service = Executors.newSingleThreadExecutor();
-        service.submit(updateCustomer);
+        });
         service.shutdown();
     }
 
@@ -231,14 +247,32 @@ public class MainController implements Initializable {
             custToolDrawer.setCollapsible(true);
             custToolDrawer.setExpanded(false);
             custToolDrawer.setCollapsible(false);
-            custTableView.getItems().clear();
             editCustomerBtn.setSelected(false);
             editCustomerBtn.setDisable(true);
             deleteCustomerBtn.setSelected(false);
             deleteCustomerBtn.setDisable(true);
             addCustAppBtn.setSelected(false);
             addCustAppBtn.setDisable(true);
+            custConfirmBtn.setDisable(true);
         });
+    }
+
+    private void notify(String message, Image image) {
+        notificationBar.setExpanded(true);
+        Platform.runLater(() -> {
+            notificationLbl.setText(message);
+            notificationImg.setImage(image);
+        });
+        var service = Executors.newSingleThreadExecutor();
+        service.submit(() -> {
+            try {
+                Thread.sleep(5000);
+                notificationBar.setExpanded(false);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        service.shutdown();
     }
 
     @FXML
@@ -261,9 +295,9 @@ public class MainController implements Initializable {
         if (addCustomerBtn.isSelected()) {
             confirmAddCustomer(customer);
         } else if (deleteCustomerBtn.isSelected()) {
-            confirmDeleteCustomer(customer);
+            confirmDeleteCustomer(custTableView.getSelectionModel().getSelectedItem());
         } else if (editCustomerBtn.isSelected()) {
-            confirmUpdateCustomer(customer);
+            confirmUpdateCustomer(customer, custTableView.getSelectionModel().getSelectedItem());
         }
     }
 
@@ -287,6 +321,12 @@ public class MainController implements Initializable {
         }
     }
 
+    void tryActivateConfirmButton() {
+        custConfirmBtn.setDisable(custNameField.getText().equals("") || custPhoneField.getText().equals("") ||
+                custAddressField.getText().equals("") || custPostalCodeField.getText().equals("") ||
+                countryComboBox.getSelectionModel().isEmpty() || stateComboBox.getSelectionModel().isEmpty());
+    }
+
     @FXML
     void onActionDeleteCust(ActionEvent event) {
         if (deleteCustomerBtn.isSelected()) {
@@ -297,6 +337,7 @@ public class MainController implements Initializable {
             custPostalCodeField.setEditable(false);
             countryComboBox.setDisable(true);
             stateComboBox.setDisable(true);
+            custConfirmBtn.setDisable(false);
             openCustToolDrawer(custTableView.getSelectionModel().getSelectedItem());
         } else {
             closeCustToolDrawer();
@@ -313,10 +354,21 @@ public class MainController implements Initializable {
             custPostalCodeField.setEditable(true);
             countryComboBox.setDisable(false);
             stateComboBox.setDisable(false);
+            custConfirmBtn.setDisable(true);
             openCustToolDrawer(custTableView.getSelectionModel().getSelectedItem());
         } else {
             closeCustToolDrawer();
         }
+    }
+
+    @FXML
+    void onActionCustRefresh(ActionEvent event) {
+        populateCustomerTable();
+    }
+
+    @FXML
+    void onActionAppRefresh(ActionEvent event) {
+
     }
 
     @FXML
@@ -330,11 +382,33 @@ public class MainController implements Initializable {
         if (countryComboBox.getSelectionModel().getSelectedItem() != null) {
             populateStateBox(countryComboBox.getSelectionModel().getSelectedItem());
         }
+        tryActivateConfirmButton();
     }
 
     @FXML
     void onActionStateComboBox(ActionEvent event) {
+        tryActivateConfirmButton();
+    }
 
+    @FXML
+    void onKeyTypedCustNameField(KeyEvent event)  {
+        tryActivateConfirmButton();
+    }
+
+    @FXML
+    void onKeyTypedCustAddressField(KeyEvent event) {
+        tryActivateConfirmButton();
+    }
+
+
+    @FXML
+    void onKeyTypedPhoneField(KeyEvent event) {
+        tryActivateConfirmButton();
+    }
+
+    @FXML
+    void onKeyTypedPostalCodeField(KeyEvent event) {
+        tryActivateConfirmButton();
     }
 
     @FXML
@@ -342,6 +416,7 @@ public class MainController implements Initializable {
     private final Image addImg = new Image(getClass().getResourceAsStream("../resources/add_icon.png"));
     private final Image deleteImg = new Image(getClass().getResourceAsStream("../resources/blue_remove_icon.png"));
     private final Image editImg = new Image(getClass().getResourceAsStream("../resources/edit_icon.png"));
+    private final Image errorImg = new Image(getClass().getResourceAsStream("../resources/remove_icon.png"));
 
     @FXML
     private Button addAppBtn;
@@ -354,6 +429,9 @@ public class MainController implements Initializable {
 
     @FXML
     private Button upcomingAppBtn;
+
+    @FXML
+    private Button appRefreshBtn;
 
     @FXML
     private TitledPane appToolDrawer;
@@ -402,6 +480,9 @@ public class MainController implements Initializable {
 
     @FXML
     private ToggleButton addCustAppBtn;
+
+    @FXML
+    private Button custRefreshBtn;
 
     @FXML
     private TitledPane custToolDrawer;
@@ -454,5 +535,20 @@ public class MainController implements Initializable {
 
     @FXML
     private TableColumn<Customer, String> custPhoneCol;
+
+    @FXML
+    private TitledPane notificationBar;
+
+    @FXML
+    private ImageView notificationImg;
+
+    @FXML
+    private Label notificationLbl;
+
+    @FXML
+    private ProgressIndicator custTableProgress;
+
+    @FXML
+    private ProgressIndicator appTableProgress;
 
 }

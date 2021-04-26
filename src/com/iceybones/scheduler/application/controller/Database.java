@@ -136,7 +136,6 @@ public class Database {
             sql.setString(5, customer.getLastUpdatedBy());
             sql.setInt(6, customer.getDivisionId());
             sql.setInt(7, customer.getCustomerId());
-            System.out.println(sql.toString());
             return sql.executeUpdate() == 1;
         }
     }
