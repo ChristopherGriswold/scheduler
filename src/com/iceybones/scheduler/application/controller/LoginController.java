@@ -10,16 +10,13 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
 import java.net.URL;
+import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public class LoginController implements Initializable {
-    private static Long userAuth;
     private static ResourceBundle rb;
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -43,13 +40,9 @@ public class LoginController implements Initializable {
         loginBtn.setVisible(false);
         errorLbl.setVisible(false);
         progressBar.setVisible(true);
-        var service = Executors.newFixedThreadPool(2);
-        Callable<Long> getAuthToken = () -> Database.authenticate(usernameTxt.getText(), passwordTxt.getText());
-        Future<Long> authToken = service.submit(getAuthToken);
-        Runnable waitForAuth = () -> {
-            while (!authToken.isDone()) {}
+        Runnable getAuth = () -> {
             try {
-                if ((userAuth = authToken.get()) != null) {
+                if (Database.authenticate(usernameTxt.getText(), passwordTxt.getText())) {
                     Platform.runLater(() -> ApplicationManager.setScene("main"));
                 } else {
                     Platform.runLater(() -> errorLbl.setText(rb.getString("Login Failed")));
@@ -60,13 +53,46 @@ public class LoginController implements Initializable {
                     errorLbl.setVisible(true);
                     progressBar.setVisible(false);
                 });
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (SQLException e) {
                 e.printStackTrace();
             }
         };
-        service.submit(waitForAuth);
+        var service = Executors.newSingleThreadExecutor();
+        service.submit(getAuth);
         service.shutdown();
     }
+
+//    @FXML
+//    void onActionLogin(ActionEvent event) {
+//        borderPane.requestFocus();
+//        loginBtn.setDisable(true);
+//        loginBtn.setVisible(false);
+//        errorLbl.setVisible(false);
+//        progressBar.setVisible(true);
+//        var service = Executors.newFixedThreadPool(2);
+//        Callable<Boolean> tryLogin = () -> Database.authenticate(usernameTxt.getText(), passwordTxt.getText());
+//        Future<Boolean> isSuccessful = service.submit(tryLogin);
+//        Runnable waitForAuth = () -> {
+//            while (!isSuccessful.isDone()) {}
+//            try {
+//                if ((isSuccessful.get() != null && isSuccessful.get())) {
+//                    Platform.runLater(() -> ApplicationManager.setScene("main"));
+//                } else {
+//                    Platform.runLater(() -> errorLbl.setText(rb.getString("Login Failed")));
+//                }
+//                Platform.runLater(() -> {
+//                    loginBtn.setDisable(false);
+//                    loginBtn.setVisible(true);
+//                    errorLbl.setVisible(true);
+//                    progressBar.setVisible(false);
+//                });
+//            } catch (InterruptedException | ExecutionException e) {
+//                e.printStackTrace();
+//            }
+//        };
+//        service.submit(waitForAuth);
+//        service.shutdown();
+//    }
 
 
     @FXML
