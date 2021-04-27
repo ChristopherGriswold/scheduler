@@ -9,8 +9,14 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
+import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -18,6 +24,7 @@ import java.util.concurrent.Executors;
 
 public class LoginController implements Initializable {
     private static ResourceBundle rb;
+    private static final Path activityPath = Path.of("login_activity.txt");
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         Stage stage = ApplicationManager.getStage();
@@ -42,8 +49,10 @@ public class LoginController implements Initializable {
         progressBar.setVisible(true);
         var service = Executors.newSingleThreadExecutor();
         service.submit(() -> {
+            boolean isSuccessful = false;
             try {
                 if (Database.authenticate(usernameTxt.getText(), passwordTxt.getText())) {
+                    isSuccessful = true;
                     Platform.runLater(() -> ApplicationManager.setScene("main"));
                 } else {
                     Platform.runLater(() -> errorLbl.setText(rb.getString("Login Failed")));
@@ -56,6 +65,15 @@ public class LoginController implements Initializable {
                 });
             } catch (SQLException e) {
                 Platform.runLater(() -> errorLbl.setText(rb.getString("Database Error")));
+            } finally {
+                try (var activityWrite = Files.newBufferedWriter(activityPath, StandardCharsets.UTF_8,
+                        StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
+                    String result = "Attempted login : " + LocalDateTime.now() + " : [username='" + usernameTxt.getText() +
+                            "', isSuccessful=" + isSuccessful + "]\n";
+                    activityWrite.write(result);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
         service.shutdown();

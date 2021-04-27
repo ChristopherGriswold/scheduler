@@ -12,24 +12,9 @@ import java.util.List;
 import java.util.Map;
 
 public class Database {
-    private static final String URL = "jdbc:mysql://wgudb.ucertify.com:3306/WJ07c5c?autocommit=0";
+    private static final String URL = "jdbc:mysql://wgudb.ucertify.com:3306/WJ07c5c";
     private static final String USERNAME = "U07c5c";
     private static final String PASSWORD = "53688987983";
-    private static Connection connection;
-
-    static {
-        try {
-            connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
-            connection.setAutoCommit(false);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static Connection getConnection() throws SQLException {
-        return connection.isValid(0) ? connection : (connection = DriverManager.getConnection(URL, USERNAME, PASSWORD));
-    }
-
     private static final String LOGIN_SQL = "SELECT count(*) FROM users WHERE User_Name = ? AND Password = ?";
     private static final String GET_CUST_SQL =
             "SELECT c.Customer_ID, c.Customer_Name, c.Address, c.Postal_Code, f.Division_ID, " +
@@ -61,7 +46,22 @@ public class Database {
             "JOIN first_level_divisions d\n" +
             "ON c.Country_ID = d.Country_ID\n" +
             "ORDER BY c.Country";
+    private static Connection connection;
     private static String user;
+
+    static {
+        try {
+            connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            connection.setAutoCommit(false);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Connection getConnection() throws SQLException {
+        return connection.isValid(0) ? connection : (connection = DriverManager.getConnection(URL, USERNAME, PASSWORD));
+    }
+
     public static String getUser() {
         return user;
     }
