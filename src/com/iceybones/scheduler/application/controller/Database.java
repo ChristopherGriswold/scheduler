@@ -59,7 +59,11 @@ public class Database {
     }
 
     public static Connection getConnection() throws SQLException {
-        return connection.isValid(0) ? connection : (connection = DriverManager.getConnection(URL, USERNAME, PASSWORD));
+        if (!connection.isValid(3)) {
+            connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            connection.setAutoCommit(false);
+        }
+        return connection;
     }
 
     public static String getUser() {

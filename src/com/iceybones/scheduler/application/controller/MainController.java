@@ -68,7 +68,7 @@ public class MainController implements Initializable {
                 for (var customer : customers) {
                     custTableView.getItems().add(customer);
                 }
-                Platform.runLater(custTableView::refresh);
+                populateCustComboBox();
             } catch (SQLException e) {
                 notify(e.getMessage(), errorImg, false);
             } finally {
@@ -186,7 +186,10 @@ public class MainController implements Initializable {
                 clearCustToolDrawer();
                 setCollapseCustToolDrawer(true);
                 resetCustToolButtons();
-                Platform.runLater(() -> custTableView.getItems().remove(customer));
+                Platform.runLater(() -> {
+                    custTableView.getItems().remove(customer);
+                    populateCustComboBox();
+                });
             } catch (SQLException e) {
                 notify(e.getMessage(), errorImg, false);
             } finally {
@@ -206,7 +209,10 @@ public class MainController implements Initializable {
                 clearCustToolDrawer();
                 setCollapseCustToolDrawer(true);
                 resetCustToolButtons();
-                custTableView.getItems().set(custTableView.getItems().indexOf(original), newCust);
+                Platform.runLater(() -> {
+                    custTableView.getItems().set(custTableView.getItems().indexOf(original), newCust);
+                    populateCustComboBox();
+                });
             } catch (SQLException e) {
                 notify(e.getMessage(), errorImg, false);
             } finally {
@@ -312,7 +318,7 @@ public class MainController implements Initializable {
         addCustAppBtn.setDisable(true);
         if (addCustomerBtn.isSelected()) {
             showCustToolDrawerInfo(true);
-            confirmBtnImg.setImage(addImg);
+            custConfirmBtnImg.setImage(addImg);
             openCustToolDrawer(null);
         } else {
             setCollapseCustToolDrawer(true);
@@ -323,7 +329,7 @@ public class MainController implements Initializable {
     void onActionDeleteCust(ActionEvent event) {
         if (deleteCustomerBtn.isSelected()) {
             showCustToolDrawerInfo(false);
-            confirmBtnImg.setImage(deleteImg);
+            custConfirmBtnImg.setImage(deleteImg);
             custConfirmBtn.setDisable(false);
             openCustToolDrawer(custTableView.getSelectionModel().getSelectedItem());
         } else {
@@ -335,11 +341,11 @@ public class MainController implements Initializable {
     void onActionEditCust(ActionEvent event) {
         if (editCustomerBtn.isSelected()) {
             showCustToolDrawerInfo(true);
-            confirmBtnImg.setImage(editImg);
+            custConfirmBtnImg.setImage(editImg);
             custConfirmBtn.setDisable(true);
             openCustToolDrawer(custTableView.getSelectionModel().getSelectedItem());
         } else {
-            setCollapseCustToolDrawer(true);
+            setCollapseCustToolDrawer(true);        populateCustComboBox();
         }
     }
 
@@ -445,8 +451,39 @@ public class MainController implements Initializable {
         tryActivateConfirmButton();
     }
 
+    ////////////////////////////////// Appointment Methods
+
+    void populateCustComboBox() {
+        Platform.runLater(() -> {
+            appCustComboBox.getItems().clear();
+            for (var customer : custTableView.getItems()) {
+                appCustComboBox.getItems().add(customer.getCustomerId() + " : " +  customer.getCustomerName());
+            }
+            appCustComboBox.setPromptText("Customer");
+            appCustComboBox.setButtonCell(new ListCell<String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText("Customer");
+                    } else {
+                        setText(item);
+                    }
+                }
+            });
+        });
+    }
+
+
     @FXML
-    private ImageView confirmBtnImg;
+    void onActionCustComboBox(ActionEvent event) {
+        appDatePicker.setDisable(false);
+        appStartComboBox.setDisable(false);
+        appEndComboBox.setDisable(false);
+    }
+
+    @FXML
+    private ImageView custConfirmBtnImg;
     private final Image addImg = new Image(Objects.requireNonNull(getClass().getResourceAsStream("../resources/add_icon.png")));
     private final Image deleteImg = new Image(Objects.requireNonNull(getClass().getResourceAsStream("../resources/blue_remove_icon.png")));
     private final Image editImg = new Image(Objects.requireNonNull(getClass().getResourceAsStream("../resources/edit_icon.png")));
@@ -470,6 +507,43 @@ public class MainController implements Initializable {
 
     @FXML
     private TitledPane appToolDrawer;
+
+    @FXML
+    private TextField appTitleField;
+
+    @FXML
+    private TextArea appDescriptionField;
+
+    @FXML
+    private ComboBox<String> appCustComboBox;
+
+    @FXML
+    private TextField appLocationField;
+
+    @FXML
+    private ComboBox<String> appContactsComboBox;
+
+    @FXML
+    private Button appConfirmBtn;
+
+    @FXML
+    private ImageView appConfirmBtnImg;
+
+    @FXML
+    private ComboBox<?> appStartComboBox;
+
+    @FXML
+    private ComboBox<?> appEndComboBox;
+
+    @FXML
+    private DatePicker appDatePicker;
+
+    @FXML
+    private TextField appIdField;
+
+    @FXML
+    private TextField appTypeField;
+
 
     @FXML
     private TableView<Appointment> appTableView;

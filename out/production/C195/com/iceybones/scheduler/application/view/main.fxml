@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Accordion?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressIndicator?>
@@ -12,6 +13,7 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.control.ToggleButton?>
@@ -129,26 +131,97 @@
                                     </Button>
                                 </items>
                               </ToolBar>
-                              <TitledPane fx:id="appToolDrawer" collapsible="false" expanded="false" focusTraversable="false" mouseTransparent="true" pickOnBounds="false">
+                              <TitledPane fx:id="appToolDrawer" collapsible="false" focusTraversable="false" pickOnBounds="false">
                                  <opaqueInsets>
                                     <Insets />
                                  </opaqueInsets>
                                  <content>
                                     <StackPane prefHeight="150.0" prefWidth="200.0">
                                        <children>
-                                          <HBox prefHeight="100.0" prefWidth="200.0" visible="false">
+                                          <GridPane hgap="16.0" vgap="16.0">
+                                             <columnConstraints>
+                                                <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" prefWidth="278.0" />
+                                                <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" prefWidth="204.0" />
+                                                <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" prefWidth="263.0" />
+                                             </columnConstraints>
+                                             <rowConstraints>
+                                                <RowConstraints valignment="CENTER" vgrow="NEVER" />
+                                                <RowConstraints fillHeight="false" valignment="CENTER" />
+                                                <RowConstraints fillHeight="false" valignment="CENTER" vgrow="NEVER" />
+                                             </rowConstraints>
                                              <children>
-                                                <Label text="Name:" />
-                                                <TextField />
-                                                <Label text="Phone Number:" />
-                                                <TextField />
+                                                <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
+                                                   <children>
+                                                      <Label minWidth="-Infinity" text="Title:" />
+                                                      <TextField fx:id="appTitleField" onKeyTyped="#onKeyTypedCustNameField" HBox.hgrow="ALWAYS" />
+                                                   </children>
+                                                   <GridPane.margin>
+                                                      <Insets />
+                                                   </GridPane.margin>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" prefWidth="482.0" spacing="8.0" GridPane.rowIndex="2">
+                                                   <children>
+                                                      <Label minWidth="-Infinity" text="Description:" />
+                                                      <TextArea fx:id="appDescriptionField" wrapText="true" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="2">
+                                                   <children>
+                                                      <ComboBox fx:id="appCustComboBox" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionCustComboBox" promptText="Customer" HBox.hgrow="ALWAYS" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.rowIndex="1">
+                                                   <children>
+                                                      <Label minWidth="-Infinity" text="Location:" />
+                                                      <TextField fx:id="appLocationField" onKeyTyped="#onKeyTypedPhoneField" HBox.hgrow="ALWAYS" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" nodeOrientation="LEFT_TO_RIGHT" spacing="8.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
+                                                   <children>
+                                                      <ComboBox fx:id="appContactsComboBox" maxWidth="1.7976931348623157E308" promptText="Contact" HBox.hgrow="ALWAYS" />
+                                                      <Button fx:id="appConfirmBtn" disable="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onActionCustConfirm" HBox.hgrow="NEVER">
+                                                         <graphic>
+                                                            <ImageView fx:id="appConfirmBtnImg" fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                                                               <image>
+                                                                  <Image url="@../resources/add_icon.png" />
+                                                               </image>
+                                                            </ImageView>
+                                                         </graphic>
+                                                         <opaqueInsets>
+                                                            <Insets />
+                                                         </opaqueInsets>
+                                                         <tooltip>
+                                                            <Tooltip text="Confirm Submission" />
+                                                         </tooltip>
+                                                      </Button>
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                                   <children>
+                                                      <ComboBox fx:id="appStartComboBox" disable="true" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionStateComboBox" promptText="Start" HBox.hgrow="ALWAYS" />
+                                                      <ComboBox fx:id="appEndComboBox" disable="true" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionStateComboBox" promptText="End" HBox.hgrow="ALWAYS" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                                   <children>
+                                                      <Label minWidth="-Infinity" text="Date:" />
+                                                      <DatePicker fx:id="appDatePicker" disable="true" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1">
+                                                   <children>
+                                                      <Label minWidth="-Infinity" text="ID:" />
+                                                      <TextField fx:id="appIdField" disable="true" editable="false" text="Auto-Generated" HBox.hgrow="ALWAYS" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                                                   <children>
+                                                      <Label minWidth="-Infinity" text="Type:" />
+                                                      <TextField fx:id="appTypeField" onKeyTyped="#onKeyTypedPostalCodeField" HBox.hgrow="ALWAYS" />
+                                                   </children>
+                                                </HBox>
                                              </children>
-                                          </HBox>
-                                          <HBox prefHeight="100.0" prefWidth="200.0">
-                                             <children>
-                                                <ToggleButton mnemonicParsing="false" text="ToggleButton" />
-                                             </children>
-                                          </HBox>
+                                          </GridPane>
                                        </children>
                                     </StackPane>
                                  </content>
@@ -253,7 +326,7 @@
                                  <content>
                                     <StackPane focusTraversable="true">
                                        <children>
-                                          <GridPane vgap="16.0">
+                                          <GridPane hgap="16.0" vgap="16.0">
                                             <columnConstraints>
                                                 <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" prefWidth="278.0" />
                                               <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" prefWidth="204.0" />
@@ -264,55 +337,40 @@
                                               <RowConstraints fillHeight="false" valignment="CENTER" vgrow="NEVER" />
                                             </rowConstraints>
                                              <children>
-                                                <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="16.0">
+                                                <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
                                                    <children>
                                                       <Label minWidth="-Infinity" text="Name:" />
                                                       <TextField fx:id="custNameField" onKeyTyped="#onKeyTypedCustNameField" HBox.hgrow="ALWAYS" />
                                                    </children>
                                                    <GridPane.margin>
-                                                      <Insets right="32.0" />
+                                                      <Insets />
                                                    </GridPane.margin>
                                                 </HBox>
-                                                <HBox alignment="CENTER_LEFT" spacing="16.0" GridPane.rowIndex="1">
+                                                <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.rowIndex="1">
                                                    <children>
                                                       <Label minWidth="-Infinity" text="Address:" />
                                                       <TextField fx:id="custAddressField" onKeyTyped="#onKeyTypedCustAddressField" HBox.hgrow="ALWAYS" />
                                                    </children>
-                                                   <padding>
-                                                      <Insets right="32.0" />
-                                                   </padding>
                                                 </HBox>
-                                                <HBox alignment="CENTER_LEFT" spacing="16.0" GridPane.columnIndex="1">
-                                                   <children>
-                                                      <Label minWidth="-Infinity" text="ID:" />
-                                                      <TextField fx:id="custIdField" disable="true" editable="false" text="Auto-Generated" HBox.hgrow="ALWAYS" />
-                                                   </children>
-                                                   <padding>
-                                                      <Insets right="32.0" />
-                                                   </padding>
-                                                </HBox>
-                                                <HBox alignment="CENTER_LEFT" spacing="16.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                                <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                                    <children>
                                                       <Label minWidth="-Infinity" text="Postal Code:" />
                                                       <TextField fx:id="custPostalCodeField" onKeyTyped="#onKeyTypedPostalCodeField" HBox.hgrow="ALWAYS" />
                                                    </children>
-                                                   <padding>
-                                                      <Insets right="32.0" />
-                                                   </padding>
                                                 </HBox>
-                                                <HBox alignment="CENTER_LEFT" spacing="16.0" GridPane.columnIndex="2">
+                                                <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="2">
                                                    <children>
                                                       <Label minWidth="-Infinity" text="Phone:" />
                                                       <TextField fx:id="custPhoneField" onKeyTyped="#onKeyTypedPhoneField" HBox.hgrow="ALWAYS" />
                                                    </children>
                                                 </HBox>
-                                                <HBox alignment="CENTER_LEFT" nodeOrientation="LEFT_TO_RIGHT" spacing="16.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                                <HBox alignment="CENTER_LEFT" nodeOrientation="LEFT_TO_RIGHT" spacing="8.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
                                                    <children>
                                                       <ComboBox fx:id="countryComboBox" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionCountryComboBox" promptText="Country" HBox.hgrow="ALWAYS" />
                                                       <ComboBox fx:id="stateComboBox" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionStateComboBox" promptText="State" HBox.hgrow="ALWAYS" />
-                                                      <Button fx:id="custConfirmBtn" disable="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onActionCustConfirm" HBox.hgrow="ALWAYS">
+                                                      <Button fx:id="custConfirmBtn" disable="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onActionCustConfirm" HBox.hgrow="NEVER">
                                                          <graphic>
-                                                            <ImageView fx:id="confirmBtnImg" fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                                                            <ImageView fx:id="custConfirmBtnImg" fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
                                                                <image>
                                                                   <Image url="@../resources/add_icon.png" />
                                                                </image>
@@ -325,6 +383,12 @@
                                                             <Tooltip text="Confirm Submission" />
                                                          </tooltip>
                                                       </Button>
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1">
+                                                   <children>
+                                                      <Label minWidth="-Infinity" text="ID:" />
+                                                      <TextField fx:id="custIdField" disable="true" editable="false" text="Auto-Generated" HBox.hgrow="ALWAYS" />
                                                    </children>
                                                 </HBox>
                                              </children>
