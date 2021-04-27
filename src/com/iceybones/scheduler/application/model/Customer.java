@@ -2,7 +2,7 @@ package com.iceybones.scheduler.application.model;
 
 import java.sql.Timestamp;
 
-public class Customer {
+public class Customer implements Comparable<Customer>{
     private int customerId;
     private String customerName;
     private String address;
@@ -113,5 +113,15 @@ public class Customer {
 
     public void setLastUpdatedBy(String lastUpdatedBy) {
         this.lastUpdatedBy = lastUpdatedBy;
+    }
+
+    @Override
+    public int compareTo(Customer other) {
+        return this.getCustomerId() - other.getCustomerId();
+    }
+
+    @Override
+    public String toString() {
+        return customerId + " : " + customerName;
     }
 }

@@ -74,9 +74,9 @@
       </Accordion>
    </bottom>
    <center>
-      <TabPane prefHeight="200.0" prefWidth="200.0" side="LEFT" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+      <TabPane fx:id="tabPane" prefHeight="200.0" prefWidth="200.0" side="LEFT" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
         <tabs>
-          <Tab text="Appointments">
+          <Tab fx:id="appTab" text="Appointments">
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
@@ -131,7 +131,7 @@
                                     </Button>
                                 </items>
                               </ToolBar>
-                              <TitledPane fx:id="appToolDrawer" collapsible="false" focusTraversable="false" pickOnBounds="false">
+                              <TitledPane fx:id="appToolDrawer" collapsible="false" expanded="false" focusTraversable="false" pickOnBounds="false">
                                  <opaqueInsets>
                                     <Insets />
                                  </opaqueInsets>
@@ -249,7 +249,7 @@
                   </AnchorPane>
             </content>
           </Tab>
-          <Tab text="Customers">
+          <Tab fx:id="custTab" text="Customers">
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0">
                      <children>
@@ -296,7 +296,7 @@
                                           <Tooltip text="Edit Selected Customer" />
                                        </tooltip>
                                     </ToggleButton>
-                                    <ToggleButton fx:id="addCustAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionAddCustApp" toggleGroup="$custToggleGroup">
+                                    <Button fx:id="addCustAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionAddCustApp">
                                        <graphic>
                                           <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
                                              <image>
@@ -307,7 +307,7 @@
                                        <tooltip>
                                           <Tooltip text="Schedule Appointment with Selected Customer" />
                                        </tooltip>
-                                    </ToggleButton>
+                                    </Button>
                                     <Button fx:id="custRefreshBtn" mnemonicParsing="false" onAction="#onActionCustRefresh">
                                        <graphic>
                                           <ImageView fitHeight="150.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">

@@ -157,6 +157,14 @@ public class MainController implements Initializable {
         });
     }
 
+    void setCollapseAppToolDrawer(boolean b) {
+        Platform.runLater(() -> {
+            appToolDrawer.setCollapsible(true);
+            appToolDrawer.setExpanded(!b);
+            appToolDrawer.setCollapsible(false);
+        });
+    }
+
     private void confirmAddCustomer(Customer customer) {
         var service = Executors.newSingleThreadExecutor();
         service.submit(() -> {
@@ -356,7 +364,6 @@ public class MainController implements Initializable {
         addCustomerBtn.setSelected(false);
         editCustomerBtn.setSelected(false);
         deleteCustomerBtn.setSelected(false);
-        addCustAppBtn.setSelected(false);
     }
 
     void showCustToolDrawerInfo(boolean isEdit) {
@@ -375,7 +382,11 @@ public class MainController implements Initializable {
 
     @FXML
     void onActionAddCustApp(ActionEvent event) {
-
+        Platform.runLater(() -> {
+            tabPane.getSelectionModel().select(appTab);
+            setCollapseAppToolDrawer(false);
+            appCustComboBox.getSelectionModel().select(custTableView.getSelectionModel().getSelectedItem().toString());
+        });
     }
 
     @FXML
@@ -456,9 +467,7 @@ public class MainController implements Initializable {
     void populateCustComboBox() {
         Platform.runLater(() -> {
             appCustComboBox.getItems().clear();
-            for (var customer : custTableView.getItems()) {
-                appCustComboBox.getItems().add(customer.getCustomerId() + " : " +  customer.getCustomerName());
-            }
+            custTableView.getItems().stream().sorted().forEach((a) -> appCustComboBox.getItems().add(a.toString()));
             appCustComboBox.setPromptText("Customer");
             appCustComboBox.setButtonCell(new ListCell<String>() {
                 @Override
@@ -489,6 +498,15 @@ public class MainController implements Initializable {
     private final Image editImg = new Image(Objects.requireNonNull(getClass().getResourceAsStream("../resources/edit_icon.png")));
     private final Image errorImg = new Image(Objects.requireNonNull(getClass().getResourceAsStream("../resources/remove_icon.png")));
     private final Image checkmarkImg = new Image(Objects.requireNonNull(getClass().getResourceAsStream("../resources/checkmark_icon.png")));
+
+    @FXML
+    private TabPane tabPane;
+
+    @FXML
+    private Tab appTab;
+
+    @FXML
+    private Tab custTab;
 
     @FXML
     private Button addAppBtn;
@@ -588,7 +606,7 @@ public class MainController implements Initializable {
     private ToggleButton editCustomerBtn;
 
     @FXML
-    private ToggleButton addCustAppBtn;
+    private Button addCustAppBtn;
 
     @FXML
     private Button custRefreshBtn;
