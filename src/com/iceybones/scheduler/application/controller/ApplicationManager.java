@@ -7,6 +7,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Objects;
 
 public class ApplicationManager extends Application {
@@ -14,6 +15,15 @@ private static Stage stage;
 
     @Override
     public void start(Stage stage){
+        stage.setOnCloseRequest((a) -> {
+            try {
+                if (Database.getUser() != null) {
+                    Database.commit();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
         ApplicationManager.stage = stage;
         setScene("login");
         stage.show();

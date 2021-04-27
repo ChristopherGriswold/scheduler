@@ -45,6 +45,9 @@ public class MainController implements Initializable {
                     addCustomerBtn.setSelected(false);
                     closeCustToolDrawer();
                 }
+                if (editCustomerBtn.isSelected()) {
+                    custConfirmBtn.setDisable(true);
+                }
             }
         });
     }
@@ -57,7 +60,8 @@ public class MainController implements Initializable {
         custDivisionCol.setCellValueFactory(new PropertyValueFactory<>("division"));
         custCountryCol.setCellValueFactory(new PropertyValueFactory<>("country"));
         custPhoneCol.setCellValueFactory(new PropertyValueFactory<>("phone"));
-        Runnable getCustomers = () -> {
+        var service = Executors.newSingleThreadExecutor();
+        service.submit(() -> {
             try {
                 Platform.runLater(() -> custTableProgress.setVisible(true));
                 List<Customer> customers = Database.getCustomers();
@@ -66,13 +70,12 @@ public class MainController implements Initializable {
                     custTableView.getItems().add(customer);
                 }
                 Platform.runLater(custTableView::refresh);
+            } catch (SQLException e) {
+                notify(e.getMessage(), errorImg, false);
+            } finally {
                 Platform.runLater(() -> custTableProgress.setVisible(false));
-            } catch (Database.NotAuthorizedException | SQLException e) {
-                e.printStackTrace();
             }
-        };
-        var service = Executors.newSingleThreadExecutor();
-        service.submit(getCustomers);
+        });
         service.shutdown();
     }
 
@@ -94,9 +97,10 @@ public class MainController implements Initializable {
                     appTableView.getItems().add(app);
                 }
                 Platform.runLater(appTableView::refresh);
+            } catch (SQLException e) {
+                notify(e.getMessage(), errorImg, false);
+            } finally {
                 Platform.runLater(() -> appTableProgress.setVisible(false));
-            } catch (Database.NotAuthorizedException | SQLException e) {
-                e.printStackTrace();
             }
         };
         var service = Executors.newSingleThreadExecutor();
@@ -105,18 +109,17 @@ public class MainController implements Initializable {
     }
 
     void populateCountryBox() {
-        Runnable getCountries = () -> {
+        var service = Executors.newSingleThreadExecutor();
+        service.submit(() -> {
             try {
                 divisions = Database.getDivisions();
                 for (var country : divisions.keySet()) {
                     countryComboBox.getItems().add(country);
                 }
-            } catch (Database.NotAuthorizedException | SQLException e) {
-                e.printStackTrace();
+            } catch (SQLException e) {
+                notify(e.getMessage(), errorImg, false);
             }
-        };
-        var service = Executors.newSingleThreadExecutor();
-        service.submit(getCountries);
+        });
         service.shutdown();
     }
 
@@ -166,8 +169,17 @@ public class MainController implements Initializable {
             custPhoneField.setText(cust.getPhone());
             custAddressField.setText(cust.getAddress());
             custPostalCodeField.setText(cust.getPostalCode());
+            var handler = countryComboBox.getOnAction();
+            countryComboBox.setOnAction(null);
             countryComboBox.getSelectionModel().select(cust.getCountry());
+            countryComboBox.setOnAction(handler);
+            populateStateBox(cust.getCountry());
+
+            var handler2 = stateComboBox.getOnAction();
+            stateComboBox.setOnAction(null);
             stateComboBox.getSelectionModel().select(cust.getDivision());
+            stateComboBox.setOnAction(handler2);
+
         }
     }
 
@@ -178,42 +190,38 @@ public class MainController implements Initializable {
     }
 
     private void confirmAddCustomer(Customer customer) {
-        Runnable putCustomer = () -> {
+        var service = Executors.newSingleThreadExecutor();
+        service.submit(() -> {
             try {
                 Platform.runLater(() -> custTableProgress.setVisible(true));
-                boolean isSuccessful = Database.insertCustomer(customer);
-                if (isSuccessful) {
-                    notify(customer.getCustomerName() + " has been added to the database.", addImg);
-                    clearCustToolDrawer();
-                    populateCustomerTable();
-                }
+                Database.insertCustomer(customer);
+                notify(customer.getCustomerName() + " has been added to the database.", addImg, true);
+                clearCustToolDrawer();
+                populateCustomerTable();
+            } catch (SQLException e) {
+                notify(e.getMessage(), errorImg, false);
+            } finally {
                 Platform.runLater(() -> custTableProgress.setVisible(false));
-            } catch (Database.NotAuthorizedException | SQLException e) {
-                e.printStackTrace();
             }
-        };
-        var service = Executors.newSingleThreadExecutor();
-        service.submit(putCustomer);
+        });
         service.shutdown();
     }
 
     private void confirmDeleteCustomer(Customer customer) {
-        Runnable deleteCustomer = () -> {
+        var service = Executors.newSingleThreadExecutor();
+        service.submit(() -> {
             try {
                 Platform.runLater(() -> custTableProgress.setVisible(true));
-                boolean isSuccessful = Database.deleteCustomer(customer);
-                if (isSuccessful) {
-                    clearCustToolDrawer();
-                    notify(customer.getCustomerName() + " has been removed from the database.", deleteImg);
-                    Platform.runLater(() -> custTableView.getItems().remove(customer));
-                }
+                Database.deleteCustomer(customer);
+                clearCustToolDrawer();
+                notify(customer.getCustomerName() + " has been removed from the database.", deleteImg, true);
+                Platform.runLater(() -> custTableView.getItems().remove(customer));
+            } catch (SQLException e) {
+                notify(e.getMessage(), errorImg, false);
+            } finally {
                 Platform.runLater(() -> custTableProgress.setVisible(false));
-            } catch (Database.NotAuthorizedException | SQLException e) {
-                notify(e.getMessage(), errorImg);
             }
-        };
-        var service = Executors.newSingleThreadExecutor();
-        service.submit(deleteCustomer);
+        });
         service.shutdown();
     }
 
@@ -222,15 +230,14 @@ public class MainController implements Initializable {
         service.submit(() -> {
             try {
                 Platform.runLater(() -> custTableProgress.setVisible(true));
-                boolean isSuccessful = Database.updateCustomer(newCust);
-                if (isSuccessful) {
-                    clearCustToolDrawer();
-                    notify("Customer record has been updated.", editImg);
-                    custTableView.getItems().set(custTableView.getItems().indexOf(original), newCust);
-                }
+                Database.updateCustomer(newCust);
+                clearCustToolDrawer();
+                notify("Customer record has been updated.", editImg, true);
+                custTableView.getItems().set(custTableView.getItems().indexOf(original), newCust);
+            } catch (SQLException e) {
+                notify(e.getMessage(), errorImg, false);
+            } finally {
                 Platform.runLater(() -> custTableProgress.setVisible(false));
-            } catch (Database.NotAuthorizedException | SQLException e) {
-                notify(e.getMessage(), errorImg);
             }
         });
         service.shutdown();
@@ -257,11 +264,12 @@ public class MainController implements Initializable {
         });
     }
 
-    private void notify(String message, Image image) {
+    private void notify(String message, Image image, Boolean undoable) {
         notificationBar.setExpanded(true);
         Platform.runLater(() -> {
             notificationLbl.setText(message);
             notificationImg.setImage(image);
+            undoLink.setVisible(undoable);
         });
         var service = Executors.newSingleThreadExecutor();
         service.submit(() -> {
@@ -363,6 +371,25 @@ public class MainController implements Initializable {
 
     @FXML
     void onActionCustRefresh(ActionEvent event) {
+        var service = Executors.newSingleThreadExecutor();
+        service.submit(() -> {
+            try {
+                Platform.runLater(() -> custTableProgress.setVisible(true));
+                undoLink.setVisible(false);
+            } finally {
+                Platform.runLater(() -> custTableProgress.setVisible(false));
+            }
+        });
+        service.shutdown();
+        custTableView.getSelectionModel().clearSelection();
+        editCustomerBtn.setDisable(true);
+        deleteCustomerBtn.setDisable(true);
+        addCustAppBtn.setDisable(true);
+        addCustomerBtn.setSelected(false);
+        editCustomerBtn.setSelected(false);
+        deleteCustomerBtn.setSelected(false);
+        addCustAppBtn.setSelected(false);
+        closeCustToolDrawer();
         populateCustomerTable();
     }
 
@@ -386,14 +413,31 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    void onActionUndoLink(ActionEvent event) {
+        var service = Executors.newSingleThreadExecutor();
+        service.submit(() -> {
+            try {
+                Platform.runLater(() -> custTableProgress.setVisible(true));
+                Database.rollback();
+                clearCustToolDrawer();
+                notify("Undo Successful", checkmarkImg, false);
+                populateCustomerTable();
+            } catch (SQLException e) {
+                notify(e.getMessage(), errorImg, false);
+            } finally {
+                Platform.runLater(() -> custTableProgress.setVisible(false));
+            }
+        });
+        service.shutdown();
+    }
+
+    @FXML
     void onActionStateComboBox(ActionEvent event) {
         tryActivateConfirmButton();
     }
 
     @FXML
-    void onKeyTypedCustNameField(KeyEvent event)  {
-        tryActivateConfirmButton();
-    }
+    void onKeyTypedCustNameField(KeyEvent event)  { tryActivateConfirmButton(); }
 
     @FXML
     void onKeyTypedCustAddressField(KeyEvent event) {
@@ -417,6 +461,7 @@ public class MainController implements Initializable {
     private final Image deleteImg = new Image(getClass().getResourceAsStream("../resources/blue_remove_icon.png"));
     private final Image editImg = new Image(getClass().getResourceAsStream("../resources/edit_icon.png"));
     private final Image errorImg = new Image(getClass().getResourceAsStream("../resources/remove_icon.png"));
+    private final Image checkmarkImg = new Image(getClass().getResourceAsStream("../resources/checkmark_icon.png"));
 
     @FXML
     private Button addAppBtn;
@@ -550,5 +595,8 @@ public class MainController implements Initializable {
 
     @FXML
     private ProgressIndicator appTableProgress;
+
+    @FXML
+    private Hyperlink undoLink;
 
 }

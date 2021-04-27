@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Accordion?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.Tab?>
@@ -37,7 +38,7 @@
                <content>
                   <HBox nodeOrientation="RIGHT_TO_LEFT" prefHeight="100.0" prefWidth="200.0">
                      <children>
-                        <AnchorPane prefHeight="80.0" prefWidth="170.0">
+                        <AnchorPane prefHeight="80.0" prefWidth="170.0" HBox.hgrow="NEVER">
                            <children>
                               <ImageView fx:id="notificationImg" fitHeight="64.0" fitWidth="64.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="8.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="8.0">
                                  <image>
@@ -47,6 +48,11 @@
                                     <Rectangle2D />
                                  </viewport>
                               </ImageView>
+                              <Hyperlink fx:id="undoLink" alignment="CENTER_RIGHT" onAction="#onActionUndoLink" text="Undo" visible="false" AnchorPane.bottomAnchor="16.0" AnchorPane.leftAnchor="88.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="16.0">
+                                 <font>
+                                    <Font size="24.0" />
+                                 </font>
+                              </Hyperlink>
                            </children>
                         </AnchorPane>
                         <AnchorPane nodeOrientation="LEFT_TO_RIGHT" prefHeight="80.0" prefWidth="474.0" HBox.hgrow="ALWAYS">
