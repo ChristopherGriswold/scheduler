@@ -18,11 +18,13 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 
 public class MainController implements Initializable {
     private Map<String, Map<String, Integer>> divisions;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         Stage stage = ApplicationManager.getStage();
@@ -43,10 +45,7 @@ public class MainController implements Initializable {
                 }
                 if (addCustomerBtn.isSelected()) {
                     addCustomerBtn.setSelected(false);
-                    closeCustToolDrawer();
-                }
-                if (editCustomerBtn.isSelected()) {
-                    custConfirmBtn.setDisable(true);
+                    setCollapseCustToolDrawer(true);
                 }
             }
         });
@@ -89,7 +88,8 @@ public class MainController implements Initializable {
         appStartCol.setCellValueFactory(new PropertyValueFactory<>("start"));
         appEndCol.setCellValueFactory(new PropertyValueFactory<>("end"));
         appCustIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
-        Runnable getAppointments = () -> {
+        var service = Executors.newSingleThreadExecutor();
+        service.submit(() -> {
             try {
                 Platform.runLater(() -> appTableProgress.setVisible(true));
                 List<Appointment> appointments = Database.getAppointments();
@@ -102,9 +102,7 @@ public class MainController implements Initializable {
             } finally {
                 Platform.runLater(() -> appTableProgress.setVisible(false));
             }
-        };
-        var service = Executors.newSingleThreadExecutor();
-        service.submit(getAppointments);
+        });
         service.shutdown();
     }
 
@@ -124,45 +122,14 @@ public class MainController implements Initializable {
     }
 
     void populateStateBox(String country) {
+        stateComboBox.getItems().clear();
         divisions.get(country).keySet().stream().sorted().forEach(stateComboBox.getItems()::add);
     }
 
     void openCustToolDrawer(Customer cust) {
-        custToolDrawer.setCollapsible(true);
-        custToolDrawer.setExpanded(true);
-        custToolDrawer.setCollapsible(false);
+        setCollapseCustToolDrawer(false);
         if (cust == null) {
-            custIdField.setText("Auto-Generated");
-            custNameField.clear();
-            custPhoneField.clear();
-            custAddressField.clear();
-            custPostalCodeField.clear();
-            countryComboBox.getSelectionModel().clearSelection();
-            stateComboBox.getSelectionModel().clearSelection();
-            countryComboBox.setPromptText("Country");
-            countryComboBox.setButtonCell(new ListCell<String>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty) ;
-                    if (empty || item == null) {
-                        setText("Country");
-                    } else {
-                        setText(item);
-                    }
-                }
-            });
-            stateComboBox.setPromptText("State");
-            stateComboBox.setButtonCell(new ListCell<String>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty) ;
-                    if (empty || item == null) {
-                        setText("State");
-                    } else {
-                        setText(item);
-                    }
-                }
-            });
+            clearCustToolDrawer();
         } else {
             custIdField.setText(Integer.toString(cust.getCustomerId()));
             custNameField.setText(cust.getCustomerName());
@@ -174,7 +141,6 @@ public class MainController implements Initializable {
             countryComboBox.getSelectionModel().select(cust.getCountry());
             countryComboBox.setOnAction(handler);
             populateStateBox(cust.getCountry());
-
             var handler2 = stateComboBox.getOnAction();
             stateComboBox.setOnAction(null);
             stateComboBox.getSelectionModel().select(cust.getDivision());
@@ -183,10 +149,12 @@ public class MainController implements Initializable {
         }
     }
 
-    void closeCustToolDrawer() {
-        custToolDrawer.setCollapsible(true);
-        custToolDrawer.setExpanded(false);
-        custToolDrawer.setCollapsible(false);
+    void setCollapseCustToolDrawer(boolean b) {
+        Platform.runLater(() -> {
+            custToolDrawer.setCollapsible(true);
+            custToolDrawer.setExpanded(!b);
+            custToolDrawer.setCollapsible(false);
+        });
     }
 
     private void confirmAddCustomer(Customer customer) {
@@ -196,7 +164,8 @@ public class MainController implements Initializable {
                 Platform.runLater(() -> custTableProgress.setVisible(true));
                 Database.insertCustomer(customer);
                 notify(customer.getCustomerName() + " has been added to the database.", addImg, true);
-                clearCustToolDrawer();
+                setCollapseCustToolDrawer(true);
+                resetCustToolButtons();
                 populateCustomerTable();
             } catch (SQLException e) {
                 notify(e.getMessage(), errorImg, false);
@@ -213,8 +182,10 @@ public class MainController implements Initializable {
             try {
                 Platform.runLater(() -> custTableProgress.setVisible(true));
                 Database.deleteCustomer(customer);
-                clearCustToolDrawer();
                 notify(customer.getCustomerName() + " has been removed from the database.", deleteImg, true);
+                clearCustToolDrawer();
+                setCollapseCustToolDrawer(true);
+                resetCustToolButtons();
                 Platform.runLater(() -> custTableView.getItems().remove(customer));
             } catch (SQLException e) {
                 notify(e.getMessage(), errorImg, false);
@@ -231,8 +202,10 @@ public class MainController implements Initializable {
             try {
                 Platform.runLater(() -> custTableProgress.setVisible(true));
                 Database.updateCustomer(newCust);
-                clearCustToolDrawer();
                 notify("Customer record has been updated.", editImg, true);
+                clearCustToolDrawer();
+                setCollapseCustToolDrawer(true);
+                resetCustToolButtons();
                 custTableView.getItems().set(custTableView.getItems().indexOf(original), newCust);
             } catch (SQLException e) {
                 notify(e.getMessage(), errorImg, false);
@@ -250,17 +223,32 @@ public class MainController implements Initializable {
             custPhoneField.setText("");
             custAddressField.setText("");
             custPostalCodeField.setText("");
-            addCustomerBtn.setSelected(false);
-            custToolDrawer.setCollapsible(true);
-            custToolDrawer.setExpanded(false);
-            custToolDrawer.setCollapsible(false);
-            editCustomerBtn.setSelected(false);
-            editCustomerBtn.setDisable(true);
-            deleteCustomerBtn.setSelected(false);
-            deleteCustomerBtn.setDisable(true);
-            addCustAppBtn.setSelected(false);
-            addCustAppBtn.setDisable(true);
-            custConfirmBtn.setDisable(true);
+            countryComboBox.getSelectionModel().clearSelection();
+            stateComboBox.getSelectionModel().clearSelection();
+            countryComboBox.setPromptText("Country");
+            countryComboBox.setButtonCell(new ListCell<String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText("Country");
+                    } else {
+                        setText(item);
+                    }
+                }
+            });
+            stateComboBox.setPromptText("State");
+            stateComboBox.setButtonCell(new ListCell<String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText("State");
+                    } else {
+                        setText(item);
+                    }
+                }
+            });
         });
     }
 
@@ -309,6 +297,13 @@ public class MainController implements Initializable {
         }
     }
 
+    void tryActivateConfirmButton() {
+        custConfirmBtn.setDisable(custNameField.getText().equals("") || custPhoneField.getText().equals("") ||
+                custAddressField.getText().equals("") || custPostalCodeField.getText().equals("") ||
+                countryComboBox.getSelectionModel().isEmpty() || stateComboBox.getSelectionModel().isEmpty() &&
+                !deleteCustomerBtn.isSelected());
+    }
+
     @FXML
     void onActionAddCust(ActionEvent event) {
         custTableView.getSelectionModel().clearSelection();
@@ -316,72 +311,39 @@ public class MainController implements Initializable {
         deleteCustomerBtn.setDisable(true);
         addCustAppBtn.setDisable(true);
         if (addCustomerBtn.isSelected()) {
-            openCustToolDrawer(null);
+            showCustToolDrawerInfo(true);
             confirmBtnImg.setImage(addImg);
-            custNameField.setEditable(true);
-            custPhoneField.setEditable(true);
-            custAddressField.setEditable(true);
-            custPostalCodeField.setEditable(true);
-            countryComboBox.setDisable(false);
-            stateComboBox.setDisable(false);
+            openCustToolDrawer(null);
         } else {
-            closeCustToolDrawer();
+            setCollapseCustToolDrawer(true);
         }
-    }
-
-    void tryActivateConfirmButton() {
-        custConfirmBtn.setDisable(custNameField.getText().equals("") || custPhoneField.getText().equals("") ||
-                custAddressField.getText().equals("") || custPostalCodeField.getText().equals("") ||
-                countryComboBox.getSelectionModel().isEmpty() || stateComboBox.getSelectionModel().isEmpty());
     }
 
     @FXML
     void onActionDeleteCust(ActionEvent event) {
         if (deleteCustomerBtn.isSelected()) {
+            showCustToolDrawerInfo(false);
             confirmBtnImg.setImage(deleteImg);
-            custNameField.setEditable(false);
-            custPhoneField.setEditable(false);
-            custAddressField.setEditable(false);
-            custPostalCodeField.setEditable(false);
-            countryComboBox.setDisable(true);
-            stateComboBox.setDisable(true);
             custConfirmBtn.setDisable(false);
             openCustToolDrawer(custTableView.getSelectionModel().getSelectedItem());
         } else {
-            closeCustToolDrawer();
+            setCollapseCustToolDrawer(true);
         }
     }
 
     @FXML
     void onActionEditCust(ActionEvent event) {
         if (editCustomerBtn.isSelected()) {
+            showCustToolDrawerInfo(true);
             confirmBtnImg.setImage(editImg);
-            custNameField.setEditable(true);
-            custPhoneField.setEditable(true);
-            custAddressField.setEditable(true);
-            custPostalCodeField.setEditable(true);
-            countryComboBox.setDisable(false);
-            stateComboBox.setDisable(false);
             custConfirmBtn.setDisable(true);
             openCustToolDrawer(custTableView.getSelectionModel().getSelectedItem());
         } else {
-            closeCustToolDrawer();
+            setCollapseCustToolDrawer(true);
         }
     }
 
-    @FXML
-    void onActionCustRefresh(ActionEvent event) {
-        var service = Executors.newSingleThreadExecutor();
-        service.submit(() -> {
-            try {
-                Platform.runLater(() -> custTableProgress.setVisible(true));
-                undoLink.setVisible(false);
-            } finally {
-                Platform.runLater(() -> custTableProgress.setVisible(false));
-            }
-        });
-        service.shutdown();
-        custTableView.getSelectionModel().clearSelection();
+    void resetCustToolButtons() {
         editCustomerBtn.setDisable(true);
         deleteCustomerBtn.setDisable(true);
         addCustAppBtn.setDisable(true);
@@ -389,8 +351,15 @@ public class MainController implements Initializable {
         editCustomerBtn.setSelected(false);
         deleteCustomerBtn.setSelected(false);
         addCustAppBtn.setSelected(false);
-        closeCustToolDrawer();
-        populateCustomerTable();
+    }
+
+    void showCustToolDrawerInfo(boolean isEdit) {
+        custNameField.setEditable(isEdit);
+        custPhoneField.setEditable(isEdit);
+        custAddressField.setEditable(isEdit);
+        custPostalCodeField.setEditable(isEdit);
+        countryComboBox.setDisable(!isEdit);
+        stateComboBox.setDisable(!isEdit);
     }
 
     @FXML
@@ -413,13 +382,32 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    void onActionCustRefresh(ActionEvent event) {
+        var service = Executors.newSingleThreadExecutor();
+        service.submit(() -> {
+            try {
+                Platform.runLater(() -> custTableProgress.setVisible(true));
+                custTableView.getSelectionModel().clearSelection();
+                setCollapseCustToolDrawer(true);
+                populateCustomerTable();
+                resetCustToolButtons();
+                undoLink.setVisible(false);
+            } finally {
+                Platform.runLater(() -> custTableProgress.setVisible(false));
+            }
+        });
+        service.shutdown();
+    }
+
+    @FXML
     void onActionUndoLink(ActionEvent event) {
         var service = Executors.newSingleThreadExecutor();
         service.submit(() -> {
             try {
                 Platform.runLater(() -> custTableProgress.setVisible(true));
                 Database.rollback();
-                clearCustToolDrawer();
+                resetCustToolButtons();
+                setCollapseCustToolDrawer(true);
                 notify("Undo Successful", checkmarkImg, false);
                 populateCustomerTable();
             } catch (SQLException e) {
@@ -437,7 +425,9 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    void onKeyTypedCustNameField(KeyEvent event)  { tryActivateConfirmButton(); }
+    void onKeyTypedCustNameField(KeyEvent event) {
+        tryActivateConfirmButton();
+    }
 
     @FXML
     void onKeyTypedCustAddressField(KeyEvent event) {
@@ -457,11 +447,11 @@ public class MainController implements Initializable {
 
     @FXML
     private ImageView confirmBtnImg;
-    private final Image addImg = new Image(getClass().getResourceAsStream("../resources/add_icon.png"));
-    private final Image deleteImg = new Image(getClass().getResourceAsStream("../resources/blue_remove_icon.png"));
-    private final Image editImg = new Image(getClass().getResourceAsStream("../resources/edit_icon.png"));
-    private final Image errorImg = new Image(getClass().getResourceAsStream("../resources/remove_icon.png"));
-    private final Image checkmarkImg = new Image(getClass().getResourceAsStream("../resources/checkmark_icon.png"));
+    private final Image addImg = new Image(Objects.requireNonNull(getClass().getResourceAsStream("../resources/add_icon.png")));
+    private final Image deleteImg = new Image(Objects.requireNonNull(getClass().getResourceAsStream("../resources/blue_remove_icon.png")));
+    private final Image editImg = new Image(Objects.requireNonNull(getClass().getResourceAsStream("../resources/edit_icon.png")));
+    private final Image errorImg = new Image(Objects.requireNonNull(getClass().getResourceAsStream("../resources/remove_icon.png")));
+    private final Image checkmarkImg = new Image(Objects.requireNonNull(getClass().getResourceAsStream("../resources/checkmark_icon.png")));
 
     @FXML
     private Button addAppBtn;
