@@ -84,7 +84,7 @@
                            <children>
                               <ToolBar prefHeight="40.0" prefWidth="200.0">
                                 <items>
-                                    <Button fx:id="addAppBtn" mnemonicParsing="false">
+                                    <ToggleButton fx:id="addAppBtn" accessibleHelp="Add Contact" accessibleText="Add Contact" mnemonicParsing="false" onAction="#onActionAddApp">
                                        <graphic>
                                           <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
                                              <image>
@@ -92,8 +92,14 @@
                                              </image>
                                           </ImageView>
                                        </graphic>
-                                    </Button>
-                                    <Button fx:id="deleteAppBtn" disable="true" mnemonicParsing="false">
+                                       <tooltip>
+                                          <Tooltip text="Add New Appointment" />
+                                       </tooltip>
+                                       <toggleGroup>
+                                          <ToggleGroup fx:id="appToggleGroup" />
+                                       </toggleGroup>
+                                    </ToggleButton>
+                                    <ToggleButton fx:id="deleteAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionDeleteApp" toggleGroup="$appToggleGroup">
                                        <graphic>
                                           <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
                                              <image>
@@ -101,26 +107,23 @@
                                              </image>
                                           </ImageView>
                                        </graphic>
-                                    </Button>
-                                    <Button fx:id="editAppBtn" disable="true" mnemonicParsing="false">
+                                       <tooltip>
+                                          <Tooltip text="Remove Selected Appointment" />
+                                       </tooltip>
+                                    </ToggleButton>
+                                    <ToggleButton fx:id="editAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionEditApp" toggleGroup="$appToggleGroup">
                                        <graphic>
                                           <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
                                              <image>
-                                                <Image url="@../resources/star_appointment.png" />
+                                                <Image url="@../resources/edit_appointment.png" />
                                              </image>
                                           </ImageView>
                                        </graphic>
-                                    </Button>
-                                    <Button fx:id="upcomingAppBtn" mnemonicParsing="false">
-                                       <graphic>
-                                          <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                                             <image>
-                                                <Image url="@../resources/upcoming_appointment.png" />
-                                             </image>
-                                          </ImageView>
-                                       </graphic>
-                                    </Button>
-                                    <Button fx:id="appRefreshBtn" mnemonicParsing="false" onAction="#onActionAppRefresh">
+                                       <tooltip>
+                                          <Tooltip text="Edit Selected Appointment" />
+                                       </tooltip>
+                                    </ToggleButton>
+                                    <Button fx:id="appRefreshBtn" mnemonicParsing="false" onAction="#onActionRefresh">
                                        <graphic>
                                           <ImageView fitHeight="150.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
                                              <image>
@@ -128,10 +131,13 @@
                                              </image>
                                           </ImageView>
                                        </graphic>
+                                       <tooltip>
+                                          <Tooltip text="Refresh" />
+                                       </tooltip>
                                     </Button>
                                 </items>
                               </ToolBar>
-                              <TitledPane fx:id="appToolDrawer" collapsible="false" expanded="false" focusTraversable="false" pickOnBounds="false">
+                              <TitledPane fx:id="appToolDrawer" collapsible="false" focusTraversable="false" pickOnBounds="false">
                                  <opaqueInsets>
                                     <Insets />
                                  </opaqueInsets>
@@ -153,7 +159,7 @@
                                                 <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
                                                    <children>
                                                       <Label minWidth="-Infinity" text="Title:" />
-                                                      <TextField fx:id="appTitleField" onKeyTyped="#onKeyTypedCustNameField" HBox.hgrow="ALWAYS" />
+                                                      <TextField fx:id="appTitleField" onKeyTyped="#onKeyTypedAppField" HBox.hgrow="ALWAYS" />
                                                    </children>
                                                    <GridPane.margin>
                                                       <Insets />
@@ -162,7 +168,7 @@
                                                 <HBox alignment="CENTER_LEFT" prefWidth="482.0" spacing="8.0" GridPane.rowIndex="2">
                                                    <children>
                                                       <Label minWidth="-Infinity" text="Description:" />
-                                                      <TextArea fx:id="appDescriptionField" wrapText="true" />
+                                                      <TextArea fx:id="appDescriptionField" onKeyTyped="#onKeyTypedAppField" wrapText="true" />
                                                    </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="2">
@@ -173,13 +179,13 @@
                                                 <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.rowIndex="1">
                                                    <children>
                                                       <Label minWidth="-Infinity" text="Location:" />
-                                                      <TextField fx:id="appLocationField" onKeyTyped="#onKeyTypedPhoneField" HBox.hgrow="ALWAYS" />
+                                                      <TextField fx:id="appLocationField" onKeyTyped="#onKeyTypedAppField" HBox.hgrow="ALWAYS" />
                                                    </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" nodeOrientation="LEFT_TO_RIGHT" spacing="8.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
                                                    <children>
                                                       <ComboBox fx:id="appContactsComboBox" maxWidth="1.7976931348623157E308" promptText="Contact" HBox.hgrow="ALWAYS" />
-                                                      <Button fx:id="appConfirmBtn" disable="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onActionCustConfirm" HBox.hgrow="NEVER">
+                                                      <Button fx:id="appConfirmBtn" disable="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onActionAppConfirm" HBox.hgrow="NEVER">
                                                          <graphic>
                                                             <ImageView fx:id="appConfirmBtnImg" fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
                                                                <image>
@@ -198,14 +204,14 @@
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
                                                    <children>
-                                                      <ComboBox fx:id="appStartComboBox" disable="true" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionStateComboBox" promptText="Start" HBox.hgrow="ALWAYS" />
-                                                      <ComboBox fx:id="appEndComboBox" disable="true" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionStateComboBox" promptText="End" HBox.hgrow="ALWAYS" />
+                                                      <ComboBox fx:id="appStartComboBox" disable="true" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionStartComboBox" promptText="Start" HBox.hgrow="ALWAYS" />
+                                                      <ComboBox fx:id="appEndComboBox" disable="true" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionEndComboBox" promptText="End" HBox.hgrow="ALWAYS" />
                                                    </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                                    <children>
                                                       <Label minWidth="-Infinity" text="Date:" />
-                                                      <DatePicker fx:id="appDatePicker" disable="true" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                                                      <DatePicker fx:id="appDatePicker" disable="true" maxWidth="1.7976931348623157E308" onAction="#onActionDatePicker" HBox.hgrow="ALWAYS" />
                                                    </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1">
@@ -217,7 +223,7 @@
                                                 <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
                                                    <children>
                                                       <Label minWidth="-Infinity" text="Type:" />
-                                                      <TextField fx:id="appTypeField" onKeyTyped="#onKeyTypedPostalCodeField" HBox.hgrow="ALWAYS" />
+                                                      <TextField fx:id="appTypeField" onKeyTyped="#onKeyTypedAppField" HBox.hgrow="ALWAYS" />
                                                    </children>
                                                 </HBox>
                                              </children>
@@ -308,7 +314,7 @@
                                           <Tooltip text="Schedule Appointment with Selected Customer" />
                                        </tooltip>
                                     </Button>
-                                    <Button fx:id="custRefreshBtn" mnemonicParsing="false" onAction="#onActionCustRefresh">
+                                    <Button fx:id="custRefreshBtn" mnemonicParsing="false" onAction="#onActionRefresh">
                                        <graphic>
                                           <ImageView fitHeight="150.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
                                              <image>
@@ -316,10 +322,13 @@
                                              </image>
                                           </ImageView>
                                        </graphic>
+                                       <tooltip>
+                                          <Tooltip text="Refresh" />
+                                       </tooltip>
                                     </Button>
                                  </items>
                               </ToolBar>
-                              <TitledPane fx:id="custToolDrawer" collapsible="false" expanded="false" pickOnBounds="false">
+                              <TitledPane fx:id="custToolDrawer" collapsible="false" pickOnBounds="false">
                                  <opaqueInsets>
                                     <Insets />
                                  </opaqueInsets>
@@ -340,7 +349,7 @@
                                                 <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
                                                    <children>
                                                       <Label minWidth="-Infinity" text="Name:" />
-                                                      <TextField fx:id="custNameField" onKeyTyped="#onKeyTypedCustNameField" HBox.hgrow="ALWAYS" />
+                                                      <TextField fx:id="custNameField" onKeyTyped="#onKeyTypedCustField" HBox.hgrow="ALWAYS" />
                                                    </children>
                                                    <GridPane.margin>
                                                       <Insets />
@@ -349,19 +358,19 @@
                                                 <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.rowIndex="1">
                                                    <children>
                                                       <Label minWidth="-Infinity" text="Address:" />
-                                                      <TextField fx:id="custAddressField" onKeyTyped="#onKeyTypedCustAddressField" HBox.hgrow="ALWAYS" />
+                                                      <TextField fx:id="custAddressField" onKeyTyped="#onKeyTypedCustField" HBox.hgrow="ALWAYS" />
                                                    </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                                    <children>
                                                       <Label minWidth="-Infinity" text="Postal Code:" />
-                                                      <TextField fx:id="custPostalCodeField" onKeyTyped="#onKeyTypedPostalCodeField" HBox.hgrow="ALWAYS" />
+                                                      <TextField fx:id="custPostalCodeField" onKeyTyped="#onKeyTypedCustField" HBox.hgrow="ALWAYS" />
                                                    </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="2">
                                                    <children>
                                                       <Label minWidth="-Infinity" text="Phone:" />
-                                                      <TextField fx:id="custPhoneField" onKeyTyped="#onKeyTypedPhoneField" HBox.hgrow="ALWAYS" />
+                                                      <TextField fx:id="custPhoneField" onKeyTyped="#onKeyTypedCustField" HBox.hgrow="ALWAYS" />
                                                    </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" nodeOrientation="LEFT_TO_RIGHT" spacing="8.0" GridPane.columnIndex="2" GridPane.rowIndex="1">

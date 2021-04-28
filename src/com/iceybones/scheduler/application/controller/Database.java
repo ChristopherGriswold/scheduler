@@ -1,6 +1,7 @@
 package com.iceybones.scheduler.application.controller;
 
 import com.iceybones.scheduler.application.model.Appointment;
+import com.iceybones.scheduler.application.model.Contact;
 import com.iceybones.scheduler.application.model.Customer;
 
 import java.sql.Connection;
@@ -46,6 +47,7 @@ public class Database {
             "JOIN first_level_divisions d\n" +
             "ON c.Country_ID = d.Country_ID\n" +
             "ORDER BY c.Country";
+    private static final String GET_CONTACTS_SQL = "SELECT * FROM contacts";
     private static Connection connection;
     private static String user;
 
@@ -82,6 +84,20 @@ public class Database {
         } else {
             return false;
         }
+    }
+
+    public static List<Contact> getContacts() throws SQLException {
+        List<Contact> contacts = new ArrayList<>();
+        var sql = getConnection().prepareStatement(GET_CONTACTS_SQL);
+        var rs = sql.executeQuery();
+        while (rs.next()) {
+            var contact = new Contact();
+            contact.setContactId(rs.getInt(1));
+            contact.setContactName(rs.getString(2));
+            contact.setEmail(rs.getString(3));
+            contacts.add(contact);
+        }
+        return contacts;
     }
 
     public static List<Customer> getCustomers() throws SQLException {
@@ -151,7 +167,7 @@ public class Database {
             app.setType(rs.getString(6));
             app.setStart(rs.getTimestamp(7));
             app.setEnd(rs.getTimestamp(8));
-            app.setContactId(rs.getInt(9));
+            app.setCustomerId(rs.getInt(9));
             appointments.add(app);
         }
         return appointments;

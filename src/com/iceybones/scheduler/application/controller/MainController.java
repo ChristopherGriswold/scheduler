@@ -16,6 +16,7 @@ import javafx.stage.Stage;
 import java.net.URL;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -23,8 +24,12 @@ import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 
 public class MainController implements Initializable {
+    private enum TabType {
+        CUSTOMER, APPOINTMENT
+    }
     private Map<String, Map<String, Integer>> divisions;
 
+    /////////////////////////// Common Methods /////////////////////////////////
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         Stage stage = ApplicationManager.getStage();
@@ -32,9 +37,10 @@ public class MainController implements Initializable {
         stage.setMaximized(true);
         stage.setFullScreen(true);
         stage.setTitle("iceybones Scheduler");
-        populateCustomerTable();
-        populateAppointmentTable();
+        populateTable(TabType.CUSTOMER);
+        populateTable(TabType.APPOINTMENT);
         populateCountryBox();
+        populateContactComboBox();
         custTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
                 deleteCustomerBtn.setDisable(false);
@@ -45,30 +51,56 @@ public class MainController implements Initializable {
                 }
                 if (addCustomerBtn.isSelected()) {
                     addCustomerBtn.setSelected(false);
-                    setCollapseCustToolDrawer(true);
+                    setCollapseToolDrawer(true, TabType.CUSTOMER);
+                }
+            }
+        });
+        appTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                deleteAppBtn.setDisable(false);
+                editAppBtn.setDisable(false);
+                addAppBtn.setDisable(false);
+                if (oldSelection != null && appToolDrawer.isExpanded()) {
+                    openAppToolDrawer(appTableView.getSelectionModel().getSelectedItem());
+                }
+                if (addAppBtn.isSelected()) {
+                    addAppBtn.setSelected(false);
+                    setCollapseToolDrawer(true, TabType.APPOINTMENT);
                 }
             }
         });
     }
 
-    public void populateCustomerTable() {
-        custIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
-        custNameCol.setCellValueFactory(new PropertyValueFactory<>("customerName"));
-        custAddressCol.setCellValueFactory(new PropertyValueFactory<>("address"));
-        custPostalCodeCol.setCellValueFactory(new PropertyValueFactory<>("postalCode"));
-        custDivisionCol.setCellValueFactory(new PropertyValueFactory<>("division"));
-        custCountryCol.setCellValueFactory(new PropertyValueFactory<>("country"));
-        custPhoneCol.setCellValueFactory(new PropertyValueFactory<>("phone"));
+    private void notify(String message, Image image, Boolean undoable) {
+        notificationBar.setExpanded(true);
+        Platform.runLater(() -> {
+            notificationLbl.setText(message);
+            notificationImg.setImage(image);
+            undoLink.setVisible(undoable);
+        });
+        var service = Executors.newSingleThreadExecutor();
+        service.submit(() -> {
+            try {
+                Thread.sleep(5000);
+                notificationBar.setExpanded(false);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        service.shutdown();
+    }
+
+    @FXML
+    void onActionUndoLink(ActionEvent event) {
         var service = Executors.newSingleThreadExecutor();
         service.submit(() -> {
             try {
                 Platform.runLater(() -> custTableProgress.setVisible(true));
-                List<Customer> customers = Database.getCustomers();
-                custTableView.getItems().clear();
-                for (var customer : customers) {
-                    custTableView.getItems().add(customer);
-                }
-                populateCustComboBox();
+                Database.rollback();
+                resetToolButtons(TabType.CUSTOMER);
+                setCollapseToolDrawer(true, TabType.CUSTOMER);
+                notify("Undo Successful", checkmarkImg, false);
+                populateTable(TabType.CUSTOMER);
             } catch (SQLException e) {
                 notify(e.getMessage(), errorImg, false);
             } finally {
@@ -78,33 +110,251 @@ public class MainController implements Initializable {
         service.shutdown();
     }
 
-    public void populateAppointmentTable() {
-        appIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
-        appTitleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
-        appDescriptionCol.setCellValueFactory(new PropertyValueFactory<>("description"));
-        appLocationCol.setCellValueFactory(new PropertyValueFactory<>("location"));
-        appContactCol.setCellValueFactory(new PropertyValueFactory<>("contact"));
-        appTypeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
-        appStartCol.setCellValueFactory(new PropertyValueFactory<>("start"));
-        appEndCol.setCellValueFactory(new PropertyValueFactory<>("end"));
-        appCustIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
+    void tryActivateConfirmBtn(TabType tabType) {
+        if (tabType == TabType.CUSTOMER) {
+            custConfirmBtn.setDisable(custNameField.getText().equals("") || custPhoneField.getText().equals("") ||
+                    custAddressField.getText().equals("") || custPostalCodeField.getText().equals("") ||
+                    countryComboBox.getSelectionModel().isEmpty() || stateComboBox.getSelectionModel().isEmpty() &&
+                    !deleteCustomerBtn.isSelected());
+        } else {
+            appConfirmBtn.setDisable(appTitleField.getText().equals("") || appLocationField.getText().equals("") ||
+                    appTypeField.getText().equals("") || appDescriptionField.getText().equals("") ||
+                    appDatePicker.getValue() == null || appCustComboBox.getSelectionModel().isEmpty() ||
+                    appContactsComboBox.getSelectionModel().isEmpty() || appStartComboBox.getSelectionModel().isEmpty() ||
+                    appEndComboBox.getSelectionModel().isEmpty() && !deleteAppBtn.isSelected());
+        }
+    }
+
+    public void populateTable(TabType tabType) {
+        if (tabType == TabType.CUSTOMER) {
+            custIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
+            custNameCol.setCellValueFactory(new PropertyValueFactory<>("customerName"));
+            custAddressCol.setCellValueFactory(new PropertyValueFactory<>("address"));
+            custPostalCodeCol.setCellValueFactory(new PropertyValueFactory<>("postalCode"));
+            custDivisionCol.setCellValueFactory(new PropertyValueFactory<>("division"));
+            custCountryCol.setCellValueFactory(new PropertyValueFactory<>("country"));
+            custPhoneCol.setCellValueFactory(new PropertyValueFactory<>("phone"));
+            var service = Executors.newSingleThreadExecutor();
+            service.submit(() -> {
+                try {
+                    Platform.runLater(() -> custTableProgress.setVisible(true));
+                    List<Customer> customers = Database.getCustomers();
+                    custTableView.getItems().clear();
+                    for (var customer : customers) {
+                        custTableView.getItems().add(customer);
+                    }
+                    populateCustComboBox();
+                } catch (SQLException e) {
+                    notify(e.getMessage(), errorImg, false);
+                } finally {
+                    Platform.runLater(() -> custTableProgress.setVisible(false));
+                }
+            });
+            service.shutdown();
+        } else {
+            appIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
+            appTitleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
+            appDescriptionCol.setCellValueFactory(new PropertyValueFactory<>("description"));
+            appLocationCol.setCellValueFactory(new PropertyValueFactory<>("location"));
+            appContactCol.setCellValueFactory(new PropertyValueFactory<>("contact"));
+            appTypeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
+            appStartCol.setCellValueFactory(new PropertyValueFactory<>("start"));
+            appEndCol.setCellValueFactory(new PropertyValueFactory<>("end"));
+            appCustIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
+            var service = Executors.newSingleThreadExecutor();
+            service.submit(() -> {
+                try {
+                    Platform.runLater(() -> appTableProgress.setVisible(true));
+                    List<Appointment> appointments = Database.getAppointments();
+                    appTableView.getItems().clear();
+                    for (var app : appointments) {
+                        appTableView.getItems().add(app);
+                    }
+                    Platform.runLater(appTableView::refresh);
+                } catch (SQLException e) {
+                    notify(e.getMessage(), errorImg, false);
+                } finally {
+                    Platform.runLater(() -> appTableProgress.setVisible(false));
+                }
+            });
+            service.shutdown();
+        }
+    }
+
+    void setCollapseToolDrawer(boolean b, TabType tabType) {
+        Platform.runLater(() -> {
+            if (tabType == TabType.CUSTOMER) {
+                custToolDrawer.setCollapsible(true);
+                custToolDrawer.setExpanded(!b);
+                custToolDrawer.setCollapsible(false);
+            } else {
+                appToolDrawer.setCollapsible(true);
+                appToolDrawer.setExpanded(!b);
+                appToolDrawer.setCollapsible(false);
+            }
+        });
+    }
+
+    private void clearToolDrawer(TabType tabType) {
+        Platform.runLater(() -> {
+            if (tabType == TabType.CUSTOMER) {
+                custNameField.setText("");
+                custIdField.setText("Auto-Generated");
+                custPhoneField.setText("");
+                custAddressField.setText("");
+                custPostalCodeField.setText("");
+                countryComboBox.getSelectionModel().clearSelection();
+                stateComboBox.getSelectionModel().clearSelection();
+                countryComboBox.setPromptText("Country");
+                countryComboBox.setButtonCell(new ListCell<String>() {
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText("Country");
+                        } else {
+                            setText(item);
+                        }
+                    }
+                });
+                stateComboBox.setPromptText("State");
+                stateComboBox.setButtonCell(new ListCell<String>() {
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText("State");
+                        } else {
+                            setText(item);
+                        }
+                    }
+                });
+            } else {
+                appTitleField.setText("");
+                appIdField.setText("Auto-Generated");
+                appLocationField.setText("");
+                appDescriptionField.setText("");
+                appTypeField.setText("");
+                appCustComboBox.getSelectionModel().clearSelection();
+                appDatePicker.setValue(LocalDate.now());
+                appStartComboBox.getSelectionModel().clearSelection();
+                appEndComboBox.getSelectionModel().clearSelection();
+                appContactsComboBox.getSelectionModel().clearSelection();
+                appStartComboBox.setPromptText("Start");
+                appStartComboBox.setButtonCell(new ListCell<String>() {
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText("End");
+                        } else {
+                            setText(item);
+                        }
+                    }
+                });
+                appEndComboBox.setPromptText("End");
+                appEndComboBox.setButtonCell(new ListCell<String>() {
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText("End");
+                        } else {
+                            setText(item);
+                        }
+                    }
+                });
+                appCustComboBox.setPromptText("Customer");
+                appCustComboBox.setButtonCell(new ListCell<String>() {
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText("Customer");
+                        } else {
+                            setText(item);
+                        }
+                    }
+                });
+                appContactsComboBox.setPromptText("Contact");
+                appContactsComboBox.setButtonCell(new ListCell<String>() {
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText("Contact");
+                        } else {
+                            setText(item);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    @FXML
+    void onActionRefresh(ActionEvent event) {
         var service = Executors.newSingleThreadExecutor();
         service.submit(() -> {
             try {
-                Platform.runLater(() -> appTableProgress.setVisible(true));
-                List<Appointment> appointments = Database.getAppointments();
-                for (var app : appointments) {
-                    appTableView.getItems().add(app);
+                if (event.getSource() == custRefreshBtn) {
+                    Platform.runLater(() -> custTableProgress.setVisible(true));
+                    custTableView.getSelectionModel().clearSelection();
+                    setCollapseToolDrawer(true, TabType.CUSTOMER);
+                    populateTable(TabType.CUSTOMER);
+                    resetToolButtons(TabType.CUSTOMER);
+                } else {
+                    Platform.runLater(() -> appTableProgress.setVisible(true));
+                    appTableView.getSelectionModel().clearSelection();
+                    setCollapseToolDrawer(true, TabType.APPOINTMENT);
+                    populateTable(TabType.APPOINTMENT);
+                    resetToolButtons(TabType.APPOINTMENT);
                 }
-                Platform.runLater(appTableView::refresh);
-            } catch (SQLException e) {
-                notify(e.getMessage(), errorImg, false);
+                undoLink.setVisible(false);
             } finally {
-                Platform.runLater(() -> appTableProgress.setVisible(false));
+                Platform.runLater(() -> {
+                    custTableProgress.setVisible(false);
+                    appTableProgress.setVisible(false);
+                });
             }
         });
         service.shutdown();
     }
+
+    void resetToolButtons(TabType tabType) {
+        if (tabType == TabType.CUSTOMER) {
+            editCustomerBtn.setDisable(true);
+            deleteCustomerBtn.setDisable(true);
+            addCustAppBtn.setDisable(true);
+            addCustomerBtn.setSelected(false);
+            editCustomerBtn.setSelected(false);
+            deleteCustomerBtn.setSelected(false);
+        } else {
+            editAppBtn.setDisable(true);
+            deleteAppBtn.setDisable(true);
+            addAppBtn.setSelected(false);
+            editAppBtn.setSelected(false);
+            deleteAppBtn.setSelected(false);
+        }
+    }
+
+    void setToolDrawerEditable(boolean isEdit, TabType tabType) {
+        if (tabType == TabType.CUSTOMER) {
+            custNameField.setEditable(isEdit);
+            custPhoneField.setEditable(isEdit);
+            custAddressField.setEditable(isEdit);
+            custPostalCodeField.setEditable(isEdit);
+            countryComboBox.setDisable(!isEdit);
+            stateComboBox.setDisable(!isEdit);
+        } else {
+            appTitleField.setEditable(isEdit);
+            appLocationField.setEditable(isEdit);
+            appDescriptionField.setEditable(isEdit);
+            appTypeField.setEditable(isEdit);
+        }
+    }
+
+    ////////////////////////////////// Customer Tab Methods //////////////////////////////////////////
 
     void populateCountryBox() {
         var service = Executors.newSingleThreadExecutor();
@@ -127,9 +377,9 @@ public class MainController implements Initializable {
     }
 
     void openCustToolDrawer(Customer cust) {
-        setCollapseCustToolDrawer(false);
+        setCollapseToolDrawer(false, TabType.CUSTOMER);
         if (cust == null) {
-            clearCustToolDrawer();
+            clearToolDrawer(TabType.CUSTOMER);
         } else {
             custIdField.setText(Integer.toString(cust.getCustomerId()));
             custNameField.setText(cust.getCustomerName());
@@ -149,22 +399,6 @@ public class MainController implements Initializable {
         }
     }
 
-    void setCollapseCustToolDrawer(boolean b) {
-        Platform.runLater(() -> {
-            custToolDrawer.setCollapsible(true);
-            custToolDrawer.setExpanded(!b);
-            custToolDrawer.setCollapsible(false);
-        });
-    }
-
-    void setCollapseAppToolDrawer(boolean b) {
-        Platform.runLater(() -> {
-            appToolDrawer.setCollapsible(true);
-            appToolDrawer.setExpanded(!b);
-            appToolDrawer.setCollapsible(false);
-        });
-    }
-
     private void confirmAddCustomer(Customer customer) {
         var service = Executors.newSingleThreadExecutor();
         service.submit(() -> {
@@ -172,9 +406,9 @@ public class MainController implements Initializable {
                 Platform.runLater(() -> custTableProgress.setVisible(true));
                 Database.insertCustomer(customer);
                 notify(customer.getCustomerName() + " has been added to the database.", addImg, true);
-                setCollapseCustToolDrawer(true);
-                resetCustToolButtons();
-                populateCustomerTable();
+                setCollapseToolDrawer(true, TabType.CUSTOMER);
+                resetToolButtons(TabType.CUSTOMER);
+                populateTable(TabType.CUSTOMER);
             } catch (SQLException e) {
                 notify(e.getMessage(), errorImg, false);
             } finally {
@@ -191,9 +425,9 @@ public class MainController implements Initializable {
                 Platform.runLater(() -> custTableProgress.setVisible(true));
                 Database.deleteCustomer(customer);
                 notify(customer.getCustomerName() + " has been removed from the database.", deleteImg, true);
-                clearCustToolDrawer();
-                setCollapseCustToolDrawer(true);
-                resetCustToolButtons();
+                clearToolDrawer(TabType.CUSTOMER);
+                setCollapseToolDrawer(true, TabType.CUSTOMER);
+                resetToolButtons(TabType.CUSTOMER);
                 Platform.runLater(() -> {
                     custTableView.getItems().remove(customer);
                     populateCustComboBox();
@@ -214,9 +448,9 @@ public class MainController implements Initializable {
                 Platform.runLater(() -> custTableProgress.setVisible(true));
                 Database.updateCustomer(newCust);
                 notify("Customer record has been updated.", editImg, true);
-                clearCustToolDrawer();
-                setCollapseCustToolDrawer(true);
-                resetCustToolButtons();
+                clearToolDrawer(TabType.CUSTOMER);
+                setCollapseToolDrawer(true, TabType.CUSTOMER);
+                resetToolButtons(TabType.CUSTOMER);
                 Platform.runLater(() -> {
                     custTableView.getItems().set(custTableView.getItems().indexOf(original), newCust);
                     populateCustComboBox();
@@ -225,61 +459,6 @@ public class MainController implements Initializable {
                 notify(e.getMessage(), errorImg, false);
             } finally {
                 Platform.runLater(() -> custTableProgress.setVisible(false));
-            }
-        });
-        service.shutdown();
-    }
-
-    private void clearCustToolDrawer() {
-        Platform.runLater(() -> {
-            custNameField.setText("");
-            custIdField.setText("Auto-Generated");
-            custPhoneField.setText("");
-            custAddressField.setText("");
-            custPostalCodeField.setText("");
-            countryComboBox.getSelectionModel().clearSelection();
-            stateComboBox.getSelectionModel().clearSelection();
-            countryComboBox.setPromptText("Country");
-            countryComboBox.setButtonCell(new ListCell<String>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || item == null) {
-                        setText("Country");
-                    } else {
-                        setText(item);
-                    }
-                }
-            });
-            stateComboBox.setPromptText("State");
-            stateComboBox.setButtonCell(new ListCell<String>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || item == null) {
-                        setText("State");
-                    } else {
-                        setText(item);
-                    }
-                }
-            });
-        });
-    }
-
-    private void notify(String message, Image image, Boolean undoable) {
-        notificationBar.setExpanded(true);
-        Platform.runLater(() -> {
-            notificationLbl.setText(message);
-            notificationImg.setImage(image);
-            undoLink.setVisible(undoable);
-        });
-        var service = Executors.newSingleThreadExecutor();
-        service.submit(() -> {
-            try {
-                Thread.sleep(5000);
-                notificationBar.setExpanded(false);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         });
         service.shutdown();
@@ -311,13 +490,6 @@ public class MainController implements Initializable {
         }
     }
 
-    void tryActivateConfirmButton() {
-        custConfirmBtn.setDisable(custNameField.getText().equals("") || custPhoneField.getText().equals("") ||
-                custAddressField.getText().equals("") || custPostalCodeField.getText().equals("") ||
-                countryComboBox.getSelectionModel().isEmpty() || stateComboBox.getSelectionModel().isEmpty() &&
-                !deleteCustomerBtn.isSelected());
-    }
-
     @FXML
     void onActionAddCust(ActionEvent event) {
         custTableView.getSelectionModel().clearSelection();
@@ -325,66 +497,44 @@ public class MainController implements Initializable {
         deleteCustomerBtn.setDisable(true);
         addCustAppBtn.setDisable(true);
         if (addCustomerBtn.isSelected()) {
-            showCustToolDrawerInfo(true);
+            setToolDrawerEditable(true, TabType.CUSTOMER);
             custConfirmBtnImg.setImage(addImg);
             openCustToolDrawer(null);
         } else {
-            setCollapseCustToolDrawer(true);
+            setCollapseToolDrawer(true, TabType.CUSTOMER);
         }
     }
 
     @FXML
     void onActionDeleteCust(ActionEvent event) {
         if (deleteCustomerBtn.isSelected()) {
-            showCustToolDrawerInfo(false);
+            setToolDrawerEditable(false, TabType.CUSTOMER);
             custConfirmBtnImg.setImage(deleteImg);
             custConfirmBtn.setDisable(false);
             openCustToolDrawer(custTableView.getSelectionModel().getSelectedItem());
         } else {
-            setCollapseCustToolDrawer(true);
+            setCollapseToolDrawer(true, TabType.CUSTOMER);
         }
     }
 
     @FXML
     void onActionEditCust(ActionEvent event) {
         if (editCustomerBtn.isSelected()) {
-            showCustToolDrawerInfo(true);
+            setToolDrawerEditable(true, TabType.CUSTOMER);
             custConfirmBtnImg.setImage(editImg);
             custConfirmBtn.setDisable(true);
             openCustToolDrawer(custTableView.getSelectionModel().getSelectedItem());
         } else {
-            setCollapseCustToolDrawer(true);        populateCustComboBox();
+            setCollapseToolDrawer(true, TabType.CUSTOMER);
+            populateCustComboBox();
         }
-    }
-
-    void resetCustToolButtons() {
-        editCustomerBtn.setDisable(true);
-        deleteCustomerBtn.setDisable(true);
-        addCustAppBtn.setDisable(true);
-        addCustomerBtn.setSelected(false);
-        editCustomerBtn.setSelected(false);
-        deleteCustomerBtn.setSelected(false);
-    }
-
-    void showCustToolDrawerInfo(boolean isEdit) {
-        custNameField.setEditable(isEdit);
-        custPhoneField.setEditable(isEdit);
-        custAddressField.setEditable(isEdit);
-        custPostalCodeField.setEditable(isEdit);
-        countryComboBox.setDisable(!isEdit);
-        stateComboBox.setDisable(!isEdit);
-    }
-
-    @FXML
-    void onActionAppRefresh(ActionEvent event) {
-
     }
 
     @FXML
     void onActionAddCustApp(ActionEvent event) {
         Platform.runLater(() -> {
             tabPane.getSelectionModel().select(appTab);
-            setCollapseAppToolDrawer(false);
+            setCollapseToolDrawer(false, TabType.APPOINTMENT);
             appCustComboBox.getSelectionModel().select(custTableView.getSelectionModel().getSelectedItem().toString());
         });
     }
@@ -395,74 +545,25 @@ public class MainController implements Initializable {
         if (countryComboBox.getSelectionModel().getSelectedItem() != null) {
             populateStateBox(countryComboBox.getSelectionModel().getSelectedItem());
         }
-        tryActivateConfirmButton();
-    }
-
-    @FXML
-    void onActionCustRefresh(ActionEvent event) {
-        var service = Executors.newSingleThreadExecutor();
-        service.submit(() -> {
-            try {
-                Platform.runLater(() -> custTableProgress.setVisible(true));
-                custTableView.getSelectionModel().clearSelection();
-                setCollapseCustToolDrawer(true);
-                populateCustomerTable();
-                resetCustToolButtons();
-                undoLink.setVisible(false);
-            } finally {
-                Platform.runLater(() -> custTableProgress.setVisible(false));
-            }
-        });
-        service.shutdown();
-    }
-
-    @FXML
-    void onActionUndoLink(ActionEvent event) {
-        var service = Executors.newSingleThreadExecutor();
-        service.submit(() -> {
-            try {
-                Platform.runLater(() -> custTableProgress.setVisible(true));
-                Database.rollback();
-                resetCustToolButtons();
-                setCollapseCustToolDrawer(true);
-                notify("Undo Successful", checkmarkImg, false);
-                populateCustomerTable();
-            } catch (SQLException e) {
-                notify(e.getMessage(), errorImg, false);
-            } finally {
-                Platform.runLater(() -> custTableProgress.setVisible(false));
-            }
-        });
-        service.shutdown();
+        tryActivateConfirmBtn(TabType.CUSTOMER);
     }
 
     @FXML
     void onActionStateComboBox(ActionEvent event) {
-        tryActivateConfirmButton();
+        tryActivateConfirmBtn(TabType.CUSTOMER);
     }
 
     @FXML
-    void onKeyTypedCustNameField(KeyEvent event) {
-        tryActivateConfirmButton();
+    void onKeyTypedCustField(KeyEvent event) {
+        tryActivateConfirmBtn(TabType.CUSTOMER);
     }
+
+    ////////////////////////////////// Appointment Tab Methods ////////////////////////////////////////
 
     @FXML
-    void onKeyTypedCustAddressField(KeyEvent event) {
-        tryActivateConfirmButton();
+    void onKeyTypedAppField(KeyEvent event) {
+        tryActivateConfirmBtn(TabType.APPOINTMENT);
     }
-
-
-    @FXML
-    void onKeyTypedPhoneField(KeyEvent event) {
-        tryActivateConfirmButton();
-    }
-
-    @FXML
-    void onKeyTypedPostalCodeField(KeyEvent event) {
-        tryActivateConfirmButton();
-    }
-
-    ////////////////////////////////// Appointment Methods
 
     void populateCustComboBox() {
         Platform.runLater(() -> {
@@ -481,6 +582,113 @@ public class MainController implements Initializable {
                 }
             });
         });
+    }
+
+    void populateContactComboBox() {
+        Platform.runLater(() -> {
+            appContactsComboBox.getItems().clear();
+            var service = Executors.newSingleThreadExecutor();
+            service.submit(() -> {
+                try {
+                    Database.getContacts().forEach((a) -> appContactsComboBox.getItems().add(a.getContactName()));
+                } catch (SQLException e) {
+                    notify(e.getMessage(), errorImg, false);
+                }
+            });
+            service.shutdown();
+            custTableView.getItems().stream().sorted().forEach((a) -> appCustComboBox.getItems().add(a.toString()));
+            appCustComboBox.setPromptText("Customer");
+            appCustComboBox.setButtonCell(new ListCell<String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText("Customer");
+                    } else {
+                        setText(item);
+                    }
+                }
+            });
+        });
+    }
+
+    void openAppToolDrawer(Appointment app) {
+        setCollapseToolDrawer(false, TabType.APPOINTMENT);
+        if (app == null) {
+            clearToolDrawer(TabType.APPOINTMENT);
+        } else {
+            custIdField.setText(Integer.toString(app.getCustomerId()));
+            var handler = appCustComboBox.getOnAction();
+            appCustComboBox.setOnAction(null);
+//            appCustComboBox.getSelectionModel().select(app.getContact().toString());
+            //TODO THIS NEEDS ATTENTION!
+            appCustComboBox.setOnAction(handler);
+            var handler2 = appContactsComboBox.getOnAction();
+            appContactsComboBox.setOnAction(null);
+            appContactsComboBox.getSelectionModel().select(app.getContact().toString());
+            appContactsComboBox.setOnAction(handler2);
+
+        }
+    }
+
+    @FXML
+    void onActionAddApp(ActionEvent event) {
+        appTableView.getSelectionModel().clearSelection();
+        editAppBtn.setDisable(true);
+        deleteAppBtn.setDisable(true);
+        if (addAppBtn.isSelected()) {
+            setToolDrawerEditable(true, TabType.APPOINTMENT);
+            appConfirmBtnImg.setImage(addImg);
+            openAppToolDrawer(null);
+        } else {
+            setCollapseToolDrawer(true, TabType.APPOINTMENT);
+        }
+    }
+
+    @FXML
+    void onActionDeleteApp(ActionEvent event) {
+        if (deleteAppBtn.isSelected()) {
+            setToolDrawerEditable(false, TabType.APPOINTMENT);
+            appConfirmBtnImg.setImage(deleteImg);
+            appConfirmBtn.setDisable(false);
+            openAppToolDrawer(appTableView.getSelectionModel().getSelectedItem());
+        } else {
+            setCollapseToolDrawer(true, TabType.APPOINTMENT);
+        }
+    }
+
+    @FXML
+    void onActionEditApp(ActionEvent event) {
+        if (editAppBtn.isSelected()) {
+            setToolDrawerEditable(true, TabType.APPOINTMENT);
+            appConfirmBtnImg.setImage(editImg);
+            appConfirmBtn.setDisable(true);
+            openAppToolDrawer(appTableView.getSelectionModel().getSelectedItem());
+        } else {
+            setCollapseToolDrawer(true, TabType.APPOINTMENT);
+//            populateAppComboBox();
+            // TODO SOMETHING HERE
+        }
+    }
+
+    @FXML
+    void onActionAppConfirm(ActionEvent event) {
+
+    }
+
+    @FXML
+    void onActionDatePicker(ActionEvent event) {
+
+    }
+
+    @FXML
+    void onActionEndComboBox(ActionEvent event) {
+
+    }
+
+    @FXML
+    void onActionStartComboBox(ActionEvent event) {
+
     }
 
 
@@ -509,13 +717,13 @@ public class MainController implements Initializable {
     private Tab custTab;
 
     @FXML
-    private Button addAppBtn;
+    private ToggleButton addAppBtn;
 
     @FXML
-    private Button deleteAppBtn;
+    private ToggleButton deleteAppBtn;
 
     @FXML
-    private Button editAppBtn;
+    private ToggleButton editAppBtn;
 
     @FXML
     private Button upcomingAppBtn;
@@ -548,13 +756,14 @@ public class MainController implements Initializable {
     private ImageView appConfirmBtnImg;
 
     @FXML
-    private ComboBox<?> appStartComboBox;
+    private ComboBox<String> appStartComboBox;
 
     @FXML
-    private ComboBox<?> appEndComboBox;
+    private ComboBox<String> appEndComboBox;
 
     @FXML
     private DatePicker appDatePicker;
+
 
     @FXML
     private TextField appIdField;
@@ -598,6 +807,9 @@ public class MainController implements Initializable {
 
     @FXML
     private ToggleGroup custToggleGroup;
+
+    @FXML
+    private ToggleGroup appToggleGroup;
 
     @FXML
     private ToggleButton deleteCustomerBtn;
