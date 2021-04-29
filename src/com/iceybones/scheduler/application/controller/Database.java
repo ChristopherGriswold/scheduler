@@ -7,6 +7,7 @@ import com.iceybones.scheduler.application.model.Customer;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +20,7 @@ public class Database {
     private static final String LOGIN_SQL = "SELECT count(*) FROM users WHERE User_Name = ? AND Password = ?";
     private static final String GET_CUST_SQL =
             "SELECT c.Customer_ID, c.Customer_Name, c.Address, c.Postal_Code, f.Division_ID, " +
-                    "f.Division , t.Country, c.Phone\n" +
+                    "f.Division , t.Country, c.Phone, c.Create_Date, c.Last_Update, c.Created_By\n" +
                     "FROM customers c\n" +
                     "LEFT JOIN first_level_divisions f\n" +
                     "ON c.Division_ID = f.Division_ID\n" +
@@ -114,6 +115,11 @@ public class Database {
             cust.setDivision(rs.getString(6));
             cust.setCountry(rs.getString(7));
             cust.setPhone(rs.getString(8));
+            cust.setCreateDate(rs.getTimestamp(9).toLocalDateTime().atZone(ZoneId.systemDefault()).
+                    withZoneSameInstant(ZoneId.of("UTC")));
+            cust.setLastUpdate(rs.getTimestamp(10).toLocalDateTime().atZone(ZoneId.systemDefault()).
+                    withZoneSameInstant(ZoneId.of("UTC")));
+            cust.setCreatedBy(rs.getString(11));
             customers.add(cust);
         }
         return customers;
@@ -165,8 +171,10 @@ public class Database {
             app.setLocation(rs.getString(4));
             app.setContact(rs.getString(5));
             app.setType(rs.getString(6));
-            app.setStart(rs.getTimestamp(7));
-            app.setEnd(rs.getTimestamp(8));
+            app.setStart(rs.getTimestamp(7).toLocalDateTime().atZone(ZoneId.systemDefault()).
+                    withZoneSameInstant(ZoneId.of("UTC")));
+            app.setEnd(rs.getTimestamp(8).toLocalDateTime().atZone(ZoneId.systemDefault()).
+                    withZoneSameInstant(ZoneId.of("UTC")));
             app.setCustomerId(rs.getInt(9));
             appointments.add(app);
         }

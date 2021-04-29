@@ -19,6 +19,8 @@ private static Stage stage;
             try {
                 if (Database.getUser() != null) {
                     Database.commit();
+                    MainController.stopNotifyService();
+                    MainController.stopDbService();
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -42,6 +44,7 @@ private static Stage stage;
             e.printStackTrace();
         }
         stage.setScene(new Scene(root));
+        stage.centerOnScreen();
     }
 
 

@@ -1,5 +1,5 @@
 package com.iceybones.scheduler.application.model;
-import java.sql.Timestamp;
+import java.time.ZonedDateTime;
 
 public class Appointment {
     private int appointmentId;
@@ -8,11 +8,11 @@ public class Appointment {
     private String location;
     private String contact;
     private String type;
-    private Timestamp start;
-    private Timestamp end;
-    private Timestamp createDate;
+    private ZonedDateTime start;
+    private ZonedDateTime end;
+    private ZonedDateTime createDate;
     private String createdBy;
-    private Timestamp lastUpdate;
+    private ZonedDateTime lastUpdate;
     private String lastUpdatedBy;
     private int customerId;
     private int userId;
@@ -83,27 +83,27 @@ public class Appointment {
         this.type = type;
     }
 
-    public Timestamp getStart() {
+    public ZonedDateTime getStart() {
         return start;
     }
 
-    public void setStart(Timestamp start) {
+    public void setStart(ZonedDateTime start) {
         this.start = start;
     }
 
-    public Timestamp getEnd() {
+    public ZonedDateTime getEnd() {
         return end;
     }
 
-    public void setEnd(Timestamp end) {
+    public void setEnd(ZonedDateTime end) {
         this.end = end;
     }
 
-    public Timestamp getCreateDate() {
+    public ZonedDateTime getCreateDate() {
         return createDate;
     }
 
-    public void setCreateDate(Timestamp createDate) {
+    public void setCreateDate(ZonedDateTime createDate) {
         this.createDate = createDate;
     }
 
@@ -115,11 +115,11 @@ public class Appointment {
         this.createdBy = createdBy;
     }
 
-    public Timestamp getLastUpdate() {
+    public ZonedDateTime getLastUpdate() {
         return lastUpdate;
     }
 
-    public void setLastUpdate(Timestamp lastUpdate) {
+    public void setLastUpdate(ZonedDateTime lastUpdate) {
         this.lastUpdate = lastUpdate;
     }
 

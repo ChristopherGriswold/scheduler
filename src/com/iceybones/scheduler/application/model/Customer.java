@@ -1,6 +1,6 @@
 package com.iceybones.scheduler.application.model;
 
-import java.sql.Timestamp;
+import java.time.ZonedDateTime;
 
 public class Customer implements Comparable<Customer>{
     private int customerId;
@@ -11,9 +11,9 @@ public class Customer implements Comparable<Customer>{
     private int divisionId;
     private String country;
     private String phone;
-    private Timestamp createDate;
+    private ZonedDateTime createDate;
     private String createdBy;
-    private Timestamp lastUpdate;
+    private ZonedDateTime lastUpdate;
     private String lastUpdatedBy;
 
 //    Table Representation
@@ -83,11 +83,11 @@ public class Customer implements Comparable<Customer>{
 
     public void setPhone(String phone) { this.phone = phone; }
 
-    public Timestamp getCreateDate() {
+    public ZonedDateTime getCreateDate() {
         return createDate;
     }
 
-    public void setCreateDate(Timestamp createDate) {
+    public void setCreateDate(ZonedDateTime createDate) {
         this.createDate = createDate;
     }
 
@@ -99,11 +99,11 @@ public class Customer implements Comparable<Customer>{
         this.createdBy = createdBy;
     }
 
-    public Timestamp getLastUpdate() {
+    public ZonedDateTime getLastUpdate() {
         return lastUpdate;
     }
 
-    public void setLastUpdate(Timestamp lastUpdate) {
+    public void setLastUpdate(ZonedDateTime lastUpdate) {
         this.lastUpdate = lastUpdate;
     }
 
