@@ -1,7 +1,6 @@
 package com.iceybones.scheduler.application.controller;
 
 import com.iceybones.scheduler.application.model.*;
-
 import java.sql.*;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -62,16 +61,24 @@ public class Database {
         }
     }
 
-    private static Connection getConnection() {
-        try {
-            if (!connection.isValid(3)) {
-                connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
-                connection.setAutoCommit(false);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+    ///////////////////Common Methods//////////////////////////
+
+    private static Connection getConnection() throws SQLException {
+        if (!connection.isValid(3)) {
+            connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            connection.setAutoCommit(false);
         }
         return connection;
+    }
+
+    public static void rollback() throws SQLException {
+        getConnection().rollback();
+        cacheAppointments();
+        cacheCustomers();
+    }
+
+    public static void commit() throws SQLException {
+        getConnection().commit();
     }
 
     public static void login(String userName, String password) throws Exception {
@@ -86,29 +93,29 @@ public class Database {
                 throw new Exception("Invalid Login");
             }
         } catch (SQLException e) {
-            throw new Exception("Connection Error");
+            throw new SQLException("Connection Error");
         }
     }
 
-    private static void cacheUsers() {
-        try {
-            var sql = getConnection().prepareStatement(GET_USERS_SQL);
-            var rs = sql.executeQuery();
-            while (rs.next()) {
-                users.add(new User(rs.getString(1), rs.getInt(2)));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public static User getConnectedUser() {
+        return connectedUser;
+    }
+
+    private static void cacheUsers() throws SQLException {
+        var sql = getConnection().prepareStatement(GET_USERS_SQL);
+        var rs = sql.executeQuery();
+        while (rs.next()) {
+            users.add(new User(rs.getString(1), rs.getInt(2)));
         }
     }
 
-    public static List<User> getUsers() {
+    public static List<User> getUsers() throws SQLException {
         if (users.isEmpty()) {
             cacheUsers();
         } return users;
     }
 
-    public static User getUser(int id) {
+    public static User getUser(int id) throws SQLException {
         if (users.isEmpty()) {
             cacheUsers();
         }
@@ -116,27 +123,23 @@ public class Database {
         return user.orElse(null);
     }
 
-    private static void cacheContacts() {
+    private static void cacheContacts() throws SQLException {
         contacts.clear();
-        try {
-            var sql = getConnection().prepareStatement(GET_CONTACTS_SQL);
-            var rs = sql.executeQuery();
-            while (rs.next()) {
-                contacts.add(new Contact(rs.getString(1), rs.getInt(2)));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        var sql = getConnection().prepareStatement(GET_CONTACTS_SQL);
+        var rs = sql.executeQuery();
+        while (rs.next()) {
+            contacts.add(new Contact(rs.getString(1), rs.getInt(2)));
         }
     }
 
-    public static List<Contact> getContacts() {
+    public static List<Contact> getContacts() throws SQLException {
         if (contacts.isEmpty()) {
             cacheContacts();
         }
         return contacts;
     }
 
-    public static Contact getContact(int id) {
+    public static Contact getContact(int id) throws SQLException {
         if (contacts.isEmpty()) {
             cacheContacts();
         }
@@ -144,7 +147,54 @@ public class Database {
         return contact.orElse(null);
     }
 
-    public static Customer getCustomer(int id) {
+    private static void cacheDivisions() throws SQLException {
+        var sql = getConnection().prepareStatement(GET_DIVISIONS_SQL);
+        var rs = sql.executeQuery();
+        while (rs.next()) {
+            divisions.add(new Division(rs.getString(1), rs.getInt(2), new Country(rs.getString(3), rs.getInt(4))));
+        }
+    }
+
+    public static Division getDivision(int id) throws SQLException {
+        if (divisions.isEmpty()) {
+            cacheDivisions();
+        }
+        var division = divisions.parallelStream().filter(a -> a.getDivisionId() == id).findAny();
+        return division.orElse(null);
+    }
+    public static List<Division> getDivisionsByCountry(Country country) throws SQLException {
+        if (divisions.isEmpty()) {
+            cacheDivisions();
+        }
+        return divisions.parallelStream().filter(a -> a.getCountry().equals(country)).collect(Collectors.toList());
+    }
+
+    public static List<Country> getCountries() throws SQLException {
+        if (divisions.isEmpty()) {
+            cacheDivisions();
+        }
+        return divisions.parallelStream().map(Division::getCountry).distinct().collect(Collectors.toList());
+    }
+
+    ///////////////////Customer Methods//////////////////////////
+
+    private static void cacheCustomers() throws SQLException {
+        customers.clear();
+        var sql = getConnection().prepareStatement(GET_CUST_SQL);
+        var rs = sql.executeQuery();
+        while (rs.next()) {
+            var cust = new Customer();
+            cust.setCustomerName(rs.getString(1));
+            cust.setCustomerId(rs.getInt(2));
+            cust.setAddress(rs.getString(3));
+            cust.setPostalCode(rs.getString(4));
+            cust.setDivision(getDivision(rs.getInt(5)));
+            cust.setPhone(rs.getString(6));
+            customers.add(cust);
+        }
+    }
+
+    public static Customer getCustomer(int id) throws SQLException {
         if (customers.isEmpty()) {
             cacheCustomers();
         }
@@ -152,90 +202,78 @@ public class Database {
         return customer.orElse(null);
     }
 
-    public static List<Customer> getCustomers(){
+    public static List<Customer> getCustomers() throws SQLException {
         if (customers.isEmpty()) {
             cacheCustomers();
         }
         return customers;
     }
 
-    public static boolean insertCustomer(Customer customer) {
-        try {
-            commit();
-            var sql = getConnection().prepareStatement(INSERT_CUST_SQL);
-            sql.setString(1, customer.getCustomerName());
-            sql.setString(2, customer.getAddress());
-            sql.setString(3, customer.getPostalCode());
-            sql.setString(4, customer.getPhone());
-            sql.setString(5, customer.getCreatedBy().getUserName());
-            sql.setString(6, customer.getLastUpdatedBy().getUserName());
-            sql.setInt(7, customer.getDivision().getDivisionId());
-            sql.executeUpdate();
-            cacheCustomers();
-        } catch (SQLException e) {
-            return false;
-        }
-        return true;
+    public static void insertCustomer(Customer customer) throws SQLException {
+        commit();
+        var sql = getConnection().prepareStatement(INSERT_CUST_SQL);
+        sql.setString(1, customer.getCustomerName());
+        sql.setString(2, customer.getAddress());
+        sql.setString(3, customer.getPostalCode());
+        sql.setString(4, customer.getPhone());
+        sql.setString(5, customer.getCreatedBy().getUserName());
+        sql.setString(6, customer.getLastUpdatedBy().getUserName());
+        sql.setInt(7, customer.getDivision().getDivisionId());
+        sql.executeUpdate();
+        cacheCustomers();
     }
 
-    private static void cacheCustomers() {
-        customers.clear();
-        try {
-            var sql = getConnection().prepareStatement(GET_CUST_SQL);
-            var rs = sql.executeQuery();
-            while (rs.next()) {
-                var cust = new Customer();
-                cust.setCustomerName(rs.getString(1));
-                cust.setCustomerId(rs.getInt(2));
-                cust.setAddress(rs.getString(3));
-                cust.setPostalCode(rs.getString(4));
-                cust.setDivision(getDivision(rs.getInt(5)));
-                cust.setPhone(rs.getString(6));
-                customers.add(cust);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public static void updateCustomer(Customer customer) throws SQLException {
+        commit();
+        var sql = getConnection().prepareStatement(UPDATE_CUST_SQL);
+        sql.setString(1, customer.getCustomerName());
+        sql.setString(2, customer.getAddress());
+        sql.setString(3, customer.getPostalCode());
+        sql.setString(4, customer.getPhone());
+        sql.setString(5, customer.getLastUpdatedBy().getUserName());
+        sql.setInt(6, customer.getDivision().getDivisionId());
+        sql.setInt(7, customer.getCustomerId());
+        sql.executeUpdate();
+    }
+
+    public static void deleteCustomer(Customer customer) throws SQLException {
+        commit();
+        var sql = getConnection().prepareStatement(DELETE_CUST_SQL);
+        sql.setInt(1, customer.getCustomerId());
+        sql.executeUpdate();
+        customers.remove(customer);
+    }
+
+    ///////////////////Appointment Methods//////////////////////////
+
+    private static void cacheAppointments() throws SQLException {
+        appointments.clear();
+        var sql = getConnection().prepareStatement(GET_APPS_SQL);
+        var rs = sql.executeQuery();
+        while (rs.next()) {
+            var app = new Appointment();
+            app.setTitle(rs.getString(1));
+            app.setAppointmentId(rs.getInt(2));
+            app.setDescription(rs.getString(3));
+            app.setLocation(rs.getString(4));
+            app.setType(rs.getString(5));
+            app.setStart(rs.getTimestamp(6).toLocalDateTime().atZone(ZoneId.systemDefault()).
+                    withZoneSameInstant(ZoneId.of("UTC")));
+            app.setEnd(rs.getTimestamp(7).toLocalDateTime().atZone(ZoneId.systemDefault()).
+                    withZoneSameInstant(ZoneId.of("UTC")));
+            app.setCustomer(getCustomer(rs.getInt(8)));
+            app.setContact(getContact(rs.getInt(9)));
+            appointments.add(app);
         }
     }
 
-    public static boolean updateCustomer(Customer customer) {
-        try {
-            commit();
-            var sql = getConnection().prepareStatement(UPDATE_CUST_SQL);
-            sql.setString(1, customer.getCustomerName());
-            sql.setString(2, customer.getAddress());
-            sql.setString(3, customer.getPostalCode());
-            sql.setString(4, customer.getPhone());
-            sql.setString(5, customer.getLastUpdatedBy().getUserName());
-            sql.setInt(6, customer.getDivision().getDivisionId());
-            sql.setInt(7, customer.getCustomerId());
-            sql.executeUpdate();
-        } catch (SQLException e) {
-            return false;
-        }
-        return true;
-    }
-
-    public static boolean deleteCustomer(Customer customer) {
-        try {
-            commit();
-            var sql = getConnection().prepareStatement(DELETE_CUST_SQL);
-            sql.setInt(1, customer.getCustomerId());
-            sql.executeUpdate();
-            customers.remove(customer);
-        } catch (SQLException e) {
-            return false;
-        }
-        return true;
-    }
-
-    public static List<Appointment> getAppointments() {
+    public static List<Appointment> getAppointments() throws SQLException {
         if (appointments.isEmpty()) {
             cacheAppointments();
         } return appointments;
     }
 
-    public static Appointment getAppointment(int id) {
+    public static Appointment getAppointment(int id) throws SQLException {
         if (appointments.isEmpty()) {
             cacheAppointments();
         }
@@ -243,133 +281,47 @@ public class Database {
         return appointment.orElse(null);
     }
 
-    private static void cacheAppointments() {
-        appointments.clear();
-        try {
-            var sql = getConnection().prepareStatement(GET_APPS_SQL);
-            var rs = sql.executeQuery();
-            while (rs.next()) {
-                var app = new Appointment();
-                app.setTitle(rs.getString(1));
-                app.setAppointmentId(rs.getInt(2));
-                app.setDescription(rs.getString(3));
-                app.setLocation(rs.getString(4));
-                app.setType(rs.getString(5));
-                app.setStart(rs.getTimestamp(6).toLocalDateTime().atZone(ZoneId.systemDefault()).
-                        withZoneSameInstant(ZoneId.of("UTC")));
-                app.setEnd(rs.getTimestamp(7).toLocalDateTime().atZone(ZoneId.systemDefault()).
-                        withZoneSameInstant(ZoneId.of("UTC")));
-                app.setCustomer(getCustomer(rs.getInt(8)));
-                app.setContact(getContact(rs.getInt(9)));
-                appointments.add(app);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static boolean insertAppointment(Appointment app) {
-        try {
-            commit();
-            var sql = getConnection().prepareStatement(INSERT_APP_SQL);
+    public static void insertAppointment(Appointment app) throws SQLException {
+        commit();
+        var sql = getConnection().prepareStatement(INSERT_APP_SQL);
 //        (Title, Description, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, Customer_ID, User_ID, Contact_ID)
-            sql.setString(1, app.getTitle());
-            sql.setString(2, app.getDescription());
-            sql.setString(3, app.getLocation());
-            sql.setString(4, app.getType());
-            sql.setTimestamp(5, Timestamp.from(app.getStart().toInstant()));
-            sql.setTimestamp(6, Timestamp.from(app.getEnd().toInstant()));
-            sql.setString(7, app.getCreatedBy().getUserName());
-            sql.setString(8, app.getLastUpdatedBy().getUserName());
-            sql.setInt(9, app.getCustomer().getCustomerId());
-            sql.setInt(10, app.getUser().getUserId());
-            sql.setInt(11, app.getContact().getContactId());
-            sql.executeUpdate();
-            cacheAppointments();
-        } catch (SQLException e) {
-            return false;
-        }
-        return true;
+        sql.setString(1, app.getTitle());
+        sql.setString(2, app.getDescription());
+        sql.setString(3, app.getLocation());
+        sql.setString(4, app.getType());
+        sql.setTimestamp(5, Timestamp.from(app.getStart().toInstant()));
+        sql.setTimestamp(6, Timestamp.from(app.getEnd().toInstant()));
+        sql.setString(7, app.getCreatedBy().getUserName());
+        sql.setString(8, app.getLastUpdatedBy().getUserName());
+        sql.setInt(9, app.getCustomer().getCustomerId());
+        sql.setInt(10, app.getUser().getUserId());
+        sql.setInt(11, app.getContact().getContactId());
+        sql.executeUpdate();
+        cacheAppointments();
     }
 
-    public static boolean updateAppointment(Appointment appointment) {
-        try {
-            commit();
-            var sql = getConnection().prepareStatement(UPDATE_APP_SQL);
+    public static void updateAppointment(Appointment appointment) throws SQLException {
+        commit();
+        var sql = getConnection().prepareStatement(UPDATE_APP_SQL);
 //            (Title, Description, Location, Type, Start, End, Last_Update, Last_Updated_By, Customer_ID, User_ID, Contact_ID)
-            sql.setString(1, appointment.getTitle());
-            sql.setString(2, appointment.getDescription());
-            sql.setString(3, appointment.getLocation());
-            sql.setString(4, appointment.getType());
-            sql.setTimestamp(5, Timestamp.valueOf(appointment.getStart().toLocalDateTime()));
-            sql.setTimestamp(6, Timestamp.valueOf(appointment.getEnd().toLocalDateTime()));
-            sql.setString(7, appointment.getLastUpdatedBy().getUserName());
-            sql.setInt(8, appointment.getCustomer().getCustomerId());
-            sql.setInt(9, appointment.getUser().getUserId());
-            sql.setInt(10, appointment.getContact().getContactId());
-            sql.executeUpdate();
-        } catch (SQLException e) {
-            return false;
-        }
-        return true;
+        sql.setString(1, appointment.getTitle());
+        sql.setString(2, appointment.getDescription());
+        sql.setString(3, appointment.getLocation());
+        sql.setString(4, appointment.getType());
+        sql.setTimestamp(5, Timestamp.valueOf(appointment.getStart().toLocalDateTime()));
+        sql.setTimestamp(6, Timestamp.valueOf(appointment.getEnd().toLocalDateTime()));
+        sql.setString(7, appointment.getLastUpdatedBy().getUserName());
+        sql.setInt(8, appointment.getCustomer().getCustomerId());
+        sql.setInt(9, appointment.getUser().getUserId());
+        sql.setInt(10, appointment.getContact().getContactId());
+        sql.executeUpdate();
     }
 
-    public static boolean deleteAppointment(Appointment appointment) {
-        try {
-            commit();
-            var sql = getConnection().prepareStatement(DELETE_APP_SQL);
-            sql.setInt(1, appointment.getAppointmentId());
-            sql.executeUpdate();
-            appointments.remove(appointment);
-        } catch (SQLException e) {
-            return false;
-        }
-        return true;
+    public static void deleteAppointment(Appointment appointment) throws SQLException {
+        commit();
+        var sql = getConnection().prepareStatement(DELETE_APP_SQL);
+        sql.setInt(1, appointment.getAppointmentId());
+        sql.executeUpdate();
+        appointments.remove(appointment);
     }
-
-    private static void cacheDivisions() {
-        try {
-            var sql = getConnection().prepareStatement(GET_DIVISIONS_SQL);
-            var rs = sql.executeQuery();
-            while (rs.next()) {
-                divisions.add(new Division(rs.getString(1), rs.getInt(2), new Country(rs.getString(3), rs.getInt(4))));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static Division getDivision(int id){
-        if (divisions.isEmpty()) {
-            cacheDivisions();
-        }
-        var division = divisions.parallelStream().filter(a -> a.getDivisionId() == id).findAny();
-        return division.orElse(null);
-    }
-    public static List<Division> getDivisionsByCountry(Country country) {
-        if (divisions.isEmpty()) {
-            cacheDivisions();
-        }
-        return divisions.parallelStream().filter(a -> a.getCountry().equals(country)).collect(Collectors.toList());
-    }
-
-    public static List<Country> getCountries() {
-        if (divisions.isEmpty()) {
-            cacheDivisions();
-        }
-        return divisions.parallelStream().map(Division::getCountry).collect(Collectors.toList());
-    }
-
-    public static User getConnectedUser() {
-        return connectedUser;
-    }
-
-        public static void rollback() throws SQLException {
-            getConnection().rollback();
-        }
-
-        public static void commit() throws SQLException {
-            getConnection().commit();
-        }
-
 }
