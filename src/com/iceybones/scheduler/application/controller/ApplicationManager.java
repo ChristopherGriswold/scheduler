@@ -17,7 +17,7 @@ private static Stage stage;
     public void start(Stage stage){
         stage.setOnCloseRequest((a) -> {
             try {
-                if (Database.getUser() != null) {
+                if (Database.getConnectedUser() != null) {
                     Database.commit();
                     MainController.stopNotifyService();
                     MainController.stopDbService();

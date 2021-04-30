@@ -1,14 +1,13 @@
 package com.iceybones.scheduler.application.model;
-import java.time.ZonedDateTime;
 
 public class User {
-    private int userId;
-    private String userName;
-    private String password;
-    private ZonedDateTime createDate;
-    private String createdBy;
-    private ZonedDateTime lastUpdate;
-    private String lastUpdatedBy;
+    private final String userName;
+    private final int userId;
+
+    public User(String userName, int userId) {
+        this.userName = userName;
+        this.userId = userId;
+    }
 
 //    Table representation
 //    User_ID INT(10) (PK)
@@ -18,4 +17,17 @@ public class User {
 //    Created_By VARCHAR(50)
 //    Last_Update TIMESTAMP
 //    Last_Updated_By VARCHAR(50)
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+
+    @Override
+    public String toString() {
+        return userName;
+    }
 }

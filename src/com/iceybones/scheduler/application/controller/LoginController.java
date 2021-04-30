@@ -15,16 +15,17 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class LoginController implements Initializable {
     private static ResourceBundle rb;
     private static final Path activityPath = Path.of("login_activity.txt");
+    private static final ExecutorService dbService = Executors.newSingleThreadExecutor();
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         Stage stage = ApplicationManager.getStage();
@@ -47,24 +48,13 @@ public class LoginController implements Initializable {
         loginBtn.setVisible(false);
         errorLbl.setVisible(false);
         progressBar.setVisible(true);
-        var service = Executors.newSingleThreadExecutor();
-        service.submit(() -> {
+        dbService.submit(() -> {
             boolean isSuccessful = false;
             try {
-                if (Database.authenticate(usernameTxt.getText(), passwordTxt.getText())) {
-                    isSuccessful = true;
-                    Platform.runLater(() -> ApplicationManager.setScene("main"));
-                } else {
-                    Platform.runLater(() -> errorLbl.setText(rb.getString("Login Failed")));
-                }
-                Platform.runLater(() -> {
-                    loginBtn.setDisable(false);
-                    loginBtn.setVisible(true);
-                    errorLbl.setVisible(true);
-                    progressBar.setVisible(false);
-                });
-            } catch (SQLException e) {
-                Platform.runLater(() -> errorLbl.setText(rb.getString("Database Error")));
+                Database.login(usernameTxt.getText(), passwordTxt.getText());
+                isSuccessful = true;
+            } catch (Exception e) {
+                Platform.runLater(() -> errorLbl.setText(rb.getString(e.getMessage())));
             } finally {
                 try (var activityWrite = Files.newBufferedWriter(activityPath, StandardCharsets.UTF_8,
                         StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
@@ -75,8 +65,15 @@ public class LoginController implements Initializable {
                     e.printStackTrace();
                 }
             }
+            Platform.runLater(() -> {
+                ApplicationManager.setScene("main");
+                loginBtn.setDisable(false);
+                loginBtn.setVisible(true);
+                errorLbl.setVisible(true);
+                progressBar.setVisible(false);
+            });
         });
-        service.shutdown();
+        dbService.shutdown();
     }
 
     @FXML

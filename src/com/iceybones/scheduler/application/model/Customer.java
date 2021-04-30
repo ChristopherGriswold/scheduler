@@ -1,22 +1,34 @@
 package com.iceybones.scheduler.application.model;
 
 import java.time.ZonedDateTime;
+import java.util.Objects;
 
 public class Customer implements Comparable<Customer>{
     private int customerId;
     private String customerName;
     private String address;
     private String postalCode;
-    private String division;
-    private int divisionId;
-    private String country;
     private String phone;
+    private Division division;
     private ZonedDateTime createDate;
-    private String createdBy;
     private ZonedDateTime lastUpdate;
-    private String lastUpdatedBy;
+    private User createdBy;
+    private User lastUpdatedBy;
 
-//    Table Representation
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Customer)) return false;
+        Customer customer = (Customer) o;
+        return customerId == customer.customerId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(customerId);
+    }
+
+    //    Table Representation
 //    Customer_ID INT(10) (PK)
 //    Customer_Name VARCHAR(50)
 //    Address VARCHAR(100)
@@ -61,21 +73,15 @@ public class Customer implements Comparable<Customer>{
         this.postalCode = postalCode;
     }
 
-    public String getDivision() {
+    public Division getDivision() {
         return division;
     }
 
-    public void setDivision(String division) {
+    public Country getCountry() { return division.getCountry(); }
+
+    public void setDivision(Division division) {
         this.division = division;
     }
-
-    public int getDivisionId() { return divisionId; }
-
-    public void setDivisionId(int divisionId) { this.divisionId = divisionId; }
-
-    public String getCountry() { return country; }
-
-    public void setCountry(String country) { this.country = country; }
 
     public String getPhone() {
         return phone;
@@ -91,11 +97,11 @@ public class Customer implements Comparable<Customer>{
         this.createDate = createDate;
     }
 
-    public String getCreatedBy() {
+    public User getCreatedBy() {
         return createdBy;
     }
 
-    public void setCreatedBy(String createdBy) {
+    public void setCreatedBy(User createdBy) {
         this.createdBy = createdBy;
     }
 
@@ -107,21 +113,16 @@ public class Customer implements Comparable<Customer>{
         this.lastUpdate = lastUpdate;
     }
 
-    public String getLastUpdatedBy() {
+    public User getLastUpdatedBy() {
         return lastUpdatedBy;
     }
 
-    public void setLastUpdatedBy(String lastUpdatedBy) {
+    public void setLastUpdatedBy(User lastUpdatedBy) {
         this.lastUpdatedBy = lastUpdatedBy;
     }
 
     @Override
     public int compareTo(Customer other) {
         return this.getCustomerId() - other.getCustomerId();
-    }
-
-    @Override
-    public String toString() {
-        return customerId + " : " + customerName;
     }
 }

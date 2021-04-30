@@ -204,7 +204,7 @@
                                                    <children>
                                                       <ComboBox fx:id="appDurationComboBox" disable="true" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionDurationComboBox" prefWidth="999.0" promptText="Duration" HBox.hgrow="ALWAYS" />
                                                       <ComboBox fx:id="appStartComboBox" disable="true" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionStartComboBox" prefWidth="999.0" promptText="Start" HBox.hgrow="ALWAYS" />
-                                                      <Button fx:id="appConfirmBtn" disable="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onActionAppConfirm" HBox.hgrow="NEVER">
+                                                      <Button fx:id="appConfirmBtn" disable="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onActionConfirm" HBox.hgrow="NEVER">
                                                          <graphic>
                                                             <ImageView fx:id="appConfirmBtnImg" fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
                                                                <image>
@@ -378,7 +378,7 @@
                                                    <children>
                                                       <ComboBox fx:id="countryComboBox" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionCountryComboBox" prefWidth="999.0" promptText="Country" HBox.hgrow="ALWAYS" />
                                                       <ComboBox fx:id="stateComboBox" disable="true" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionStateComboBox" prefWidth="999.0" promptText="State" HBox.hgrow="ALWAYS" />
-                                                      <Button fx:id="custConfirmBtn" disable="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onActionCustConfirm" HBox.hgrow="NEVER">
+                                                      <Button fx:id="custConfirmBtn" disable="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onActionConfirm" HBox.hgrow="NEVER">
                                                          <graphic>
                                                             <ImageView fx:id="custConfirmBtnImg" fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
                                                                <image>

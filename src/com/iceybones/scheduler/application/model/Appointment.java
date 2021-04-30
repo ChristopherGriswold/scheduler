@@ -6,17 +6,16 @@ public class Appointment {
     private String title;
     private String description;
     private String location;
-    private String contact;
     private String type;
     private ZonedDateTime start;
     private ZonedDateTime end;
     private ZonedDateTime createDate;
-    private String createdBy;
     private ZonedDateTime lastUpdate;
-    private String lastUpdatedBy;
-    private int customerId;
-    private int userId;
-    private int contactId;
+    private User createdBy;
+    private User lastUpdatedBy;
+    private User user;
+    private Customer customer;
+    private Contact contact;
 
 //    Table Representation
 //    Appointment_ID INT(10) (PK)
@@ -67,14 +66,6 @@ public class Appointment {
         this.location = location;
     }
 
-    public String getContact() {
-        return contact;
-    }
-
-    public void setContact(String contact) {
-        this.contact = contact;
-    }
-
     public String getType() {
         return type;
     }
@@ -107,14 +98,6 @@ public class Appointment {
         this.createDate = createDate;
     }
 
-    public String getCreatedBy() {
-        return createdBy;
-    }
-
-    public void setCreatedBy(String createdBy) {
-        this.createdBy = createdBy;
-    }
-
     public ZonedDateTime getLastUpdate() {
         return lastUpdate;
     }
@@ -123,35 +106,47 @@ public class Appointment {
         this.lastUpdate = lastUpdate;
     }
 
-    public String getLastUpdatedBy() {
+    public User getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(User createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public User getLastUpdatedBy() {
         return lastUpdatedBy;
     }
 
-    public void setLastUpdatedBy(String lastUpdatedBy) {
+    public void setLastUpdatedBy(User lastUpdatedBy) {
         this.lastUpdatedBy = lastUpdatedBy;
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
     public int getCustomerId() {
-        return customerId;
+        return customer.getCustomerId();
     }
 
-    public void setCustomerId(int customerId) {
-        this.customerId = customerId;
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
     }
 
-    public int getUserId() {
-        return userId;
+    public Contact getContact() {
+        return contact;
     }
 
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
-
-    public int getContactId() {
-        return contactId;
-    }
-
-    public void setContactId(int contactId) {
-        this.contactId = contactId;
+    public void setContact(Contact contact) {
+        this.contact = contact;
     }
 }

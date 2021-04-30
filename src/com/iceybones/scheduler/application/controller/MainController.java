@@ -1,8 +1,6 @@
 package com.iceybones.scheduler.application.controller;
 
-import com.iceybones.scheduler.application.model.Appointment;
-import com.iceybones.scheduler.application.model.Contact;
-import com.iceybones.scheduler.application.model.Customer;
+import com.iceybones.scheduler.application.model.*;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -19,14 +17,16 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainController implements Initializable {
     private static ExecutorService notifyService = Executors.newSingleThreadExecutor();
     private static final ExecutorService dbService = Executors.newSingleThreadExecutor();
-    private Map<String, Map<String, Integer>> divisions;
 
     private enum TabType {
         CUSTOMER, APPOINTMENT
@@ -53,10 +53,12 @@ public class MainController implements Initializable {
         stage.setMaximized(true);
         stage.setFullScreen(true);
         stage.setTitle("iceybones Scheduler");
+        setupTables();
         populateTable(TabType.CUSTOMER);
         populateTable(TabType.APPOINTMENT);
         populateCountryBox();
         populateContactComboBox();
+        populateUserComboBox();
         appDatePicker.setDayCellFactory(picker -> new DateCell() {
             public void updateItem(LocalDate date, boolean empty) {
                 super.updateItem(date, empty);
@@ -172,57 +174,47 @@ public class MainController implements Initializable {
         }
     }
 
+    private void setupTables() {
+        custIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
+        custNameCol.setCellValueFactory(new PropertyValueFactory<>("customerName"));
+        custAddressCol.setCellValueFactory(new PropertyValueFactory<>("address"));
+        custPostalCodeCol.setCellValueFactory(new PropertyValueFactory<>("postalCode"));
+        custDivisionCol.setCellValueFactory(new PropertyValueFactory<>("division"));
+        custCountryCol.setCellValueFactory(new PropertyValueFactory<>("country"));
+        custPhoneCol.setCellValueFactory(new PropertyValueFactory<>("phone"));
+
+        appIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
+        appTitleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
+        appDescriptionCol.setCellValueFactory(new PropertyValueFactory<>("description"));
+        appLocationCol.setCellValueFactory(new PropertyValueFactory<>("location"));
+        appContactCol.setCellValueFactory(new PropertyValueFactory<>("contact"));
+        appTypeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
+        appStartCol.setCellValueFactory(new PropertyValueFactory<>("start"));
+        appEndCol.setCellValueFactory(new PropertyValueFactory<>("end"));
+        appCustIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
+    }
+
     public void populateTable(TabType tabType) {
         if (tabType == TabType.CUSTOMER) {
-            custIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
-            custNameCol.setCellValueFactory(new PropertyValueFactory<>("customerName"));
-            custAddressCol.setCellValueFactory(new PropertyValueFactory<>("address"));
-            custPostalCodeCol.setCellValueFactory(new PropertyValueFactory<>("postalCode"));
-            custDivisionCol.setCellValueFactory(new PropertyValueFactory<>("division"));
-            custCountryCol.setCellValueFactory(new PropertyValueFactory<>("country"));
-            custPhoneCol.setCellValueFactory(new PropertyValueFactory<>("phone"));
             dbService.submit(() -> {
-                try {
-                    Platform.runLater(() -> custTableProgress.setVisible(true));
-                    List<Customer> customers = Database.getCustomers();
-                    Platform.runLater(() -> {
-                        custTableView.getItems().clear();
-                        for (var customer : customers) {
-                            custTableView.getItems().add(customer);
-                        }
-                        populateCustComboBox();
-                    });
-                } catch (SQLException e) {
-                    Platform.runLater(() -> notify(e.getMessage(), errorImg, false));
-                } finally {
-                    Platform.runLater(() -> custTableProgress.setVisible(false));
-                }
+                Platform.runLater(() -> custTableProgress.setVisible(true));
+                List<Customer> customers = Database.getCustomers();
+                Platform.runLater(() -> {
+                    custTableView.getItems().clear();
+                    custTableView.getItems().addAll(customers);
+                    populateCustComboBox();
+                    custTableProgress.setVisible(false);
+                });
             });
         } else {
-            appIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
-            appTitleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
-            appDescriptionCol.setCellValueFactory(new PropertyValueFactory<>("description"));
-            appLocationCol.setCellValueFactory(new PropertyValueFactory<>("location"));
-            appContactCol.setCellValueFactory(new PropertyValueFactory<>("contact"));
-            appTypeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
-            appStartCol.setCellValueFactory(new PropertyValueFactory<>("start"));
-            appEndCol.setCellValueFactory(new PropertyValueFactory<>("end"));
-            appCustIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
             dbService.submit(() -> {
-                try {
-                    Platform.runLater(() -> appTableProgress.setVisible(true));
-                    List<Appointment> appointments = Database.getAppointments();
-                    Platform.runLater(() -> {
-                        appTableView.getItems().clear();
-                        for (var app : appointments) {
-                            appTableView.getItems().add(app);
-                        }
-                    });
-                } catch (SQLException e) {
-                    Platform.runLater(() ->notify(e.getMessage(), errorImg, false));
-                } finally {
-                    Platform.runLater(() -> appTableProgress.setVisible(false));
-                }
+                Platform.runLater(() -> appTableProgress.setVisible(true));
+                List<Appointment> appointments = Database.getAppointments();
+                Platform.runLater(() -> {
+                    appTableView.getItems().clear();
+                    appTableView.getItems().addAll(appointments);
+                    appTableProgress.setVisible(false);
+                });
             });
         }
     }
@@ -250,26 +242,26 @@ public class MainController implements Initializable {
             stateComboBox.getSelectionModel().clearSelection();
             stateComboBox.setDisable(true);
             countryComboBox.setPromptText("Country");
-            countryComboBox.setButtonCell(new ListCell<String>() {
+            countryComboBox.setButtonCell(new ListCell<>() {
                 @Override
-                protected void updateItem(String item, boolean empty) {
+                protected void updateItem(Country item, boolean empty) {
                     super.updateItem(item, empty);
                     if (empty || item == null) {
                         setText("Country");
                     } else {
-                        setText(item);
+                        setText(item.getCountry());
                     }
                 }
             });
             stateComboBox.setPromptText("State");
-            stateComboBox.setButtonCell(new ListCell<String>() {
+            stateComboBox.setButtonCell(new ListCell<>() {
                 @Override
-                protected void updateItem(String item, boolean empty) {
+                protected void updateItem(Division item, boolean empty) {
                     super.updateItem(item, empty);
                     if (empty || item == null) {
                         setText("State");
                     } else {
-                        setText(item);
+                        setText(item.getDivision());
                     }
                 }
             });
@@ -285,7 +277,7 @@ public class MainController implements Initializable {
             appDurationComboBox.getSelectionModel().clearSelection();
             appContactsComboBox.getSelectionModel().clearSelection();
             appStartComboBox.setPromptText("Start");
-            appStartComboBox.setButtonCell(new ListCell<ZonedDateTime>() {
+            appStartComboBox.setButtonCell(new ListCell<>() {
                 @Override
                 protected void updateItem(ZonedDateTime item, boolean empty) {
                     super.updateItem(item, empty);
@@ -297,7 +289,7 @@ public class MainController implements Initializable {
                 }
             });
             appDurationComboBox.setPromptText("Duration");
-            appDurationComboBox.setButtonCell(new ListCell<Integer>() {
+            appDurationComboBox.setButtonCell(new ListCell<>() {
                 @Override
                 protected void updateItem(Integer item, boolean empty) {
                     super.updateItem(item, empty);
@@ -309,26 +301,27 @@ public class MainController implements Initializable {
                 }
             });
             appCustComboBox.setPromptText("Customer");
-            appCustComboBox.setButtonCell(new ListCell<Customer>() {
+            appCustComboBox.setButtonCell(new ListCell<>() {
                 @Override
                 protected void updateItem(Customer item, boolean empty) {
                     super.updateItem(item, empty);
                     if (empty || item == null) {
                         setText("Customer");
                     } else {
-                        setText(item.toString());
+                        ;
+                        setText(appCustComboBox.getConverter().toString(item));
                     }
                 }
             });
             appContactsComboBox.setPromptText("Contact");
-            appContactsComboBox.setButtonCell(new ListCell<String>() {
+            appContactsComboBox.setButtonCell(new ListCell<>() {
                 @Override
-                protected void updateItem(String item, boolean empty) {
+                protected void updateItem(Contact item, boolean empty) {
                     super.updateItem(item, empty);
                     if (empty || item == null) {
                         setText("Contact");
                     } else {
-                        setText(item);
+                        setText(item.getContactName());
                     }
                 }
             });
@@ -405,22 +398,17 @@ public class MainController implements Initializable {
 
     void populateCountryBox() {
         dbService.submit(() -> {
-            try {
-                divisions = Database.getDivisions();
-                Platform.runLater(() -> {
-                    for (var country : divisions.keySet()) {
-                        countryComboBox.getItems().add(country);
-                    }
-                });
-            } catch (SQLException e) {
-                Platform.runLater(() -> notify(e.getMessage(), errorImg, false));
-            }
+            var countries = Database.getCountries();
+            Platform.runLater(() -> countryComboBox.getItems().addAll(countries));
         });
     }
 
-    void populateStateBox(String country) {
+    void populateStateBox(Country country) {
         stateComboBox.getItems().clear();
-        divisions.get(country).keySet().stream().sorted().forEach(stateComboBox.getItems()::add);
+        dbService.submit(() -> {
+            var divisions = Database.getDivisionsByCountry(country);
+            Platform.runLater(() -> stateComboBox.getItems().addAll(divisions));
+        });
     }
 
     void openCustToolDrawer(Customer cust) {
@@ -435,9 +423,9 @@ public class MainController implements Initializable {
             custPostalCodeField.setText(cust.getPostalCode());
             var handler = countryComboBox.getOnAction();
             countryComboBox.setOnAction(null);
-            countryComboBox.getSelectionModel().select(cust.getCountry());
+            countryComboBox.getSelectionModel().select(cust.getDivision().getCountry());
             countryComboBox.setOnAction(handler);
-            populateStateBox(cust.getCountry());
+            populateStateBox(cust.getDivision().getCountry());
             var handler2 = stateComboBox.getOnAction();
             stateComboBox.setOnAction(null);
             stateComboBox.getSelectionModel().select(cust.getDivision());
@@ -448,88 +436,95 @@ public class MainController implements Initializable {
 
     private void confirmAddCustomer(Customer customer) {
         dbService.submit(() -> {
-            try {
-                Platform.runLater(() -> custTableProgress.setVisible(true));
-                Database.insertCustomer(customer);
-                Platform.runLater(() -> {
-                    notify(customer.getCustomerName() + " has been added to the database.", addImg, true);
-                    setCollapseToolDrawer(true, TabType.CUSTOMER);
-                    resetToolButtons(TabType.CUSTOMER);
-                    populateTable(TabType.CUSTOMER);
-                });
-            } catch (SQLException e) {
-                Platform.runLater(() -> notify(e.getMessage(), errorImg, false));
-            } finally {
-                Platform.runLater(() -> custTableProgress.setVisible(false));
+            Platform.runLater(() -> custTableProgress.setVisible(true));
+            if(!Database.insertCustomer(customer)) {
+                Platform.runLater(() -> notify("Failed to add customer. Check input.", errorImg, false));
             }
+            Platform.runLater(() -> {
+                notify(customer.getCustomerName() + " has been added to the database.", addImg, true);
+                setCollapseToolDrawer(true, TabType.CUSTOMER);
+                resetToolButtons(TabType.CUSTOMER);
+                populateTable(TabType.CUSTOMER);
+            });
         });
     }
 
     private void confirmDeleteCustomer(Customer customer) {
         dbService.submit(() -> {
-            try {
-                Platform.runLater(() -> custTableProgress.setVisible(true));
-                Database.deleteCustomer(customer);
-                Platform.runLater(() -> {
-                    notify(customer.getCustomerName() + " has been removed from the database.", deleteImg, true);
-                    clearToolDrawer(TabType.CUSTOMER);
-                    setCollapseToolDrawer(true, TabType.CUSTOMER);
-                    resetToolButtons(TabType.CUSTOMER);
-                    custTableView.getItems().remove(customer);
-                    populateCustComboBox();
-                });
-            } catch (SQLException e) {
-                Platform.runLater(() -> notify(e.getMessage(), errorImg, false));
-            } finally {
-                Platform.runLater(() -> custTableProgress.setVisible(false));
+            Platform.runLater(() -> custTableProgress.setVisible(true));
+            if (!Database.deleteCustomer(customer)) {
+                Platform.runLater(() -> notify("Failed to delete customer. Check connection.", errorImg, false));
             }
+            Platform.runLater(() -> {
+                notify(customer.getCustomerName() + " has been removed from the database.", deleteImg, true);
+                clearToolDrawer(TabType.CUSTOMER);
+                setCollapseToolDrawer(true, TabType.CUSTOMER);
+                resetToolButtons(TabType.CUSTOMER);
+                custTableView.getItems().remove(customer);
+                populateCustComboBox();
+                custTableProgress.setVisible(false);
+            });
         });
     }
 
     private void confirmUpdateCustomer(Customer newCust, Customer original) {
         dbService.submit(() -> {
-            try {
-                Platform.runLater(() -> custTableProgress.setVisible(true));
-                Database.updateCustomer(newCust);
-                Platform.runLater(() -> {
-                    notify("Customer " + original.getCustomerId() +  " has been updated.", editImg, true);
-                    clearToolDrawer(TabType.CUSTOMER);
-                    setCollapseToolDrawer(true, TabType.CUSTOMER);
-                    resetToolButtons(TabType.CUSTOMER);
-                    custTableView.getItems().set(custTableView.getItems().indexOf(original), newCust);
-                    populateCustComboBox();
-                });
-            } catch (SQLException e) {
-                Platform.runLater(() -> notify(e.getMessage(), errorImg, false));
-            } finally {
-                Platform.runLater(() -> custTableProgress.setVisible(false));
+            Platform.runLater(() -> custTableProgress.setVisible(true));
+            if(!Database.updateCustomer(newCust)) {
+                Platform.runLater(() -> notify("Failed to update customer. Check connection.", errorImg, false));
             }
+            Platform.runLater(() -> {
+                notify("Customer " + original.getCustomerId() +  " has been updated.", editImg, true);
+                clearToolDrawer(TabType.CUSTOMER);
+                setCollapseToolDrawer(true, TabType.CUSTOMER);
+                resetToolButtons(TabType.CUSTOMER);
+                custTableView.getItems().set(custTableView.getItems().indexOf(original), newCust);
+                populateCustComboBox();
+                custTableProgress.setVisible(false);
+            });
         });
     }
 
     @FXML
-    void onActionCustConfirm(ActionEvent event) {
-        Customer customer = new Customer();
-        customer.setCustomerName(custNameField.getText());
-        customer.setCustomerId((custIdField.getText().equals("Auto-Generated") ? 0 : Integer.parseInt(custIdField.getText())));
-        customer.setPhone(custPhoneField.getText());
-        customer.setAddress(custAddressField.getText());
-        customer.setPostalCode(custPostalCodeField.getText());
-        customer.setCreatedBy(Database.getUser());
-        customer.setLastUpdatedBy(Database.getUser());
-        int divId = divisions.get(countryComboBox.getSelectionModel().getSelectedItem()).
-                get(stateComboBox.getSelectionModel().getSelectedItem());
-        String state = stateComboBox.getSelectionModel().getSelectedItem();
-        String country = countryComboBox.getSelectionModel().getSelectedItem();
-        customer.setCountry(country);
-        customer.setDivisionId(divId);
-        customer.setDivision(state);
-        if (addCustomerBtn.isSelected()) {
-            confirmAddCustomer(customer);
-        } else if (deleteCustomerBtn.isSelected()) {
-            confirmDeleteCustomer(custTableView.getSelectionModel().getSelectedItem());
-        } else if (editCustomerBtn.isSelected()) {
-            confirmUpdateCustomer(customer, custTableView.getSelectionModel().getSelectedItem());
+    void onActionConfirm(ActionEvent event) {
+        if (event.getSource().equals(custConfirmBtn)) {
+            Customer customer = new Customer();
+            customer.setCustomerName(custNameField.getText());
+            customer.setCustomerId((custIdField.getText().equals("Auto-Generated") ? 0 : Integer.parseInt(custIdField.getText())));
+            customer.setPhone(custPhoneField.getText());
+            customer.setAddress(custAddressField.getText());
+            customer.setPostalCode(custPostalCodeField.getText());
+            customer.setCreatedBy(Database.getUser(appUserComboBox.getValue().getUserId()));
+            customer.setLastUpdatedBy(Database.getConnectedUser());
+            customer.setDivision(stateComboBox.getValue());
+            if (addCustomerBtn.isSelected()) {
+                confirmAddCustomer(customer);
+            } else if (deleteCustomerBtn.isSelected()) {
+                confirmDeleteCustomer(custTableView.getSelectionModel().getSelectedItem());
+            } else if (editCustomerBtn.isSelected()) {
+                confirmUpdateCustomer(customer, custTableView.getSelectionModel().getSelectedItem());
+            }
+        } else {
+            Appointment app = new Appointment();
+            app.setTitle(appTitleField.getText());
+//            app.setCustomerId((custIdField.getText().equals("Auto-Generated") ? 0 : Integer.parseInt(custIdField.getText())));
+            app.setType(appTypeField.getText());
+            app.setLocation(appLocationField.getText());
+            app.setDescription(appDescriptionField.getText());
+            app.setStart(appStartComboBox.getValue());
+            app.setEnd(appStartComboBox.getValue().plusMinutes(appDurationComboBox.getValue()));
+            app.setCustomer(appCustComboBox.getValue());
+            app.setUser(appUserComboBox.getValue());
+            app.setContact(appContactsComboBox.getValue());
+            app.setCreatedBy(Database.getConnectedUser());
+            app.setLastUpdatedBy(Database.getConnectedUser());
+            if (addAppBtn.isSelected()) {
+                confirmAddApp(app);
+            } else if (deleteAppBtn.isSelected()) {
+                confirmDeleteApp(appTableView.getSelectionModel().getSelectedItem());
+            } else if (editAppBtn.isSelected()) {
+//                confirmUpdateCustomer(app, custTableView.getSelectionModel().getSelectedItem());
+            }
         }
     }
 
@@ -636,16 +631,21 @@ public class MainController implements Initializable {
     }
 
     void populateContactComboBox() {
-        // TODO SOMETHING HERE
+        // TODO SOMETHING HERE MAYBE
             appContactsComboBox.getItems().clear();
             dbService.submit(() -> {
-                try {
-                    List<Contact> contacts = Database.getContacts();
-                    Platform.runLater(() -> contacts.forEach((a) -> appContactsComboBox.getItems().add(a.getContactName())));
-                } catch (SQLException e) {
-                    Platform.runLater(() -> notify(e.getMessage(), errorImg, false));
-                }
+                List<Contact> contacts = Database.getContacts();
+                Platform.runLater(() -> appContactsComboBox.getItems().addAll(contacts));
             });
+    }
+
+    private void populateUserComboBox() {
+        // TODO SOMETHING HERE MAYBE
+        appUserComboBox.getItems().clear();
+        dbService.submit(() -> {
+            List<User> users = Database.getUsers();
+            Platform.runLater(() -> appUserComboBox.getItems().addAll(users));
+        });
     }
 
     private List<ZonedDateTime> getAvailableTimes(Customer customer) {
@@ -654,7 +654,7 @@ public class MainController implements Initializable {
         int duration = appDurationComboBox.getSelectionModel().getSelectedItem();
         List<Appointment> custApps = new ArrayList<>();
         for(var app : appTableView.getItems()) {
-            if(app.getCustomerId() == customer.getCustomerId() &&
+            if(app.getCustomer().equals(customer) &&
                     app.getStart().toLocalDateTime().toLocalDate().equals(appDatePicker.getValue()))
             {
                 custApps.add(app);
@@ -727,7 +727,7 @@ public class MainController implements Initializable {
                 return null;
             }
         });
-        appDurationComboBox.setButtonCell(new ListCell<Integer>() {
+        appDurationComboBox.setButtonCell(new ListCell<>() {
             @Override
             protected void updateItem(Integer item, boolean empty) {
                 super.updateItem(item, empty);
@@ -746,7 +746,7 @@ public class MainController implements Initializable {
         if (app == null) {
             clearToolDrawer(TabType.APPOINTMENT);
         } else {
-            custIdField.setText(Integer.toString(app.getCustomerId()));
+            custIdField.setText(Integer.toString(app.getCustomer().getCustomerId()));
             var handler = appCustComboBox.getOnAction();
             appCustComboBox.setOnAction(null);
 //            appCustComboBox.getSelectionModel().select(app.getContact().toString());
@@ -754,10 +754,44 @@ public class MainController implements Initializable {
             appCustComboBox.setOnAction(handler);
             var handler2 = appContactsComboBox.getOnAction();
             appContactsComboBox.setOnAction(null);
-            appContactsComboBox.getSelectionModel().select(app.getContact().toString());
+            appContactsComboBox.getSelectionModel().select(app.getContact());
             appContactsComboBox.setOnAction(handler2);
 
         }
+    }
+
+    private void confirmAddApp(Appointment app) {
+        dbService.submit(() -> {
+            Platform.runLater(() -> appTableProgress.setVisible(true));
+            if(!Database.insertAppointment(app)) {
+                Platform.runLater(() -> notify("Failed to add appointment. Check connection.", errorImg, false));
+            }
+            Platform.runLater(() -> {
+                notify("Appointment: " + app.getTitle() + " has been added to the database.", addImg, true);
+                setCollapseToolDrawer(true, TabType.APPOINTMENT);
+                resetToolButtons(TabType.APPOINTMENT);
+                populateTable(TabType.APPOINTMENT);
+                appTableProgress.setVisible(false);
+            });
+        });
+    }
+
+    private void confirmDeleteApp(Appointment appointment) {
+        dbService.submit(() -> {
+            Platform.runLater(() -> appTableProgress.setVisible(true));
+            if (!Database.deleteAppointment(appointment)) {
+                Platform.runLater(() -> notify("Failed to delete appointment. Check connection.", errorImg, false));
+            }
+            Platform.runLater(() -> {
+                notify(appointment.getTitle() + " has been removed from the database.", deleteImg, true);
+                clearToolDrawer(TabType.APPOINTMENT);
+                setCollapseToolDrawer(true, TabType.APPOINTMENT);
+                resetToolButtons(TabType.APPOINTMENT);
+                appTableView.getItems().remove(appointment);
+//                populateCustComboBox();
+                custTableProgress.setVisible(false);
+            });
+        });
     }
 
     @FXML
@@ -798,11 +832,6 @@ public class MainController implements Initializable {
 //            populateAppComboBox();
             // TODO SOMETHING HERE
         }
-    }
-
-    @FXML
-    void onActionAppConfirm(ActionEvent event) {
-
     }
 
     @FXML
@@ -899,10 +928,10 @@ public class MainController implements Initializable {
     private TextField appLocationField;
 
     @FXML
-    private ComboBox<String> appContactsComboBox;
+    private ComboBox<Contact> appContactsComboBox;
 
     @FXML
-    private ComboBox<String> appUserComboBox;
+    private ComboBox<User> appUserComboBox;
 
     @FXML
     private Button appConfirmBtn;
@@ -997,10 +1026,10 @@ public class MainController implements Initializable {
     private TextField custPhoneField;
 
     @FXML
-    private ComboBox<String> countryComboBox;
+    private ComboBox<Country> countryComboBox;
 
     @FXML
-    private ComboBox<String> stateComboBox;
+    private ComboBox<Division> stateComboBox;
 
     @FXML
     private Button custConfirmBtn;
