@@ -8,7 +8,6 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -23,95 +22,101 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class LoginController implements Initializable {
-    private static ResourceBundle rb;
-    private static final Path activityPath = Path.of("login_activity.txt");
-    private static final ExecutorService dbService = Executors.newSingleThreadExecutor();
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-        Stage stage = ApplicationManager.getStage();
-        stage.setTitle("Login");
-        stage.setResizable(false);
-//        rb = ResourceBundle.getBundle("com.iceybones.scheduler.application.resources.strings", new Locale("fr"));
-        rb = ResourceBundle.getBundle("com.iceybones.scheduler.application.resources.strings", Locale.getDefault());
-        loginBtn.setText(rb.getString("Login"));
-        usernameTxt.setPromptText(rb.getString("Username"));
-        passwordTxt.setPromptText(rb.getString("Password"));
-        zoneIdTxt.setText(ZoneId.systemDefault().toString());
-        loginBtn.setDisable(true);
-        Platform.runLater(() -> borderPane.requestFocus());
-    }
 
-    @FXML
-    void onActionLogin(ActionEvent event) {
-        borderPane.requestFocus();
-        loginBtn.setDisable(true);
-        loginBtn.setVisible(false);
-        errorLbl.setVisible(false);
-        progressBar.setVisible(true);
-        dbService.submit(() -> {
-            boolean isSuccessful = false;
-            try {
-                Database.login(usernameTxt.getText(), passwordTxt.getText());
-                isSuccessful = true;
-            } catch (Exception e) {
-                Platform.runLater(() -> errorLbl.setText(rb.getString(e.getMessage())));
-            } finally {
-                try (var activityWrite = Files.newBufferedWriter(activityPath, StandardCharsets.UTF_8,
-                        StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
-                    String result = "Attempted login : " + LocalDateTime.now() + " : [username='" + usernameTxt.getText() +
-                            "', isSuccessful=" + isSuccessful + "]\n";
-                    activityWrite.write(result);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            Platform.runLater(() -> {
-                ApplicationManager.setScene("main");
-                loginBtn.setDisable(false);
-                loginBtn.setVisible(true);
-                errorLbl.setVisible(true);
-                progressBar.setVisible(false);
-            });
-        });
-        dbService.shutdown();
-    }
+  private static ResourceBundle rb;
+  private static final Path activityPath = Path.of("login_activity.txt");
+  private static final ExecutorService dbService = Executors.newSingleThreadExecutor();
 
-    @FXML
-    void onActionPassword(ActionEvent event) {
-        borderPane.requestFocus();
-        loginBtn.fire();
-    }
+  @Override
+  public void initialize(URL url, ResourceBundle resourceBundle) {
+    Stage stage = ApplicationManager.getStage();
+    stage.setTitle("Login");
+    stage.setResizable(false);
+    rb = ResourceBundle.
+        getBundle("com.iceybones.scheduler.application.resources.strings", new Locale("fr"));
+    rb = ResourceBundle.
+        getBundle("com.iceybones.scheduler.application.resources.strings", Locale.getDefault());
+    loginBtn.setText(rb.getString("Login"));
+    usernameTxt.setPromptText(rb.getString("Username"));
+    passwordTxt.setPromptText(rb.getString("Password"));
+    zoneIdTxt.setText(ZoneId.systemDefault().toString());
+    loginBtn.setDisable(true);
+    Platform.runLater(() -> borderPane.requestFocus());
+  }
 
-    @FXML
-    void onActionUsername(ActionEvent event) {
-        borderPane.requestFocus();
-        loginBtn.fire();
-    }
+  @FXML
+  void onActionLogin(ActionEvent event) {
+    borderPane.requestFocus();
+    loginBtn.setDisable(true);
+    loginBtn.setVisible(false);
+    errorLbl.setVisible(false);
+    progressBar.setVisible(true);
+    dbService.submit(() -> {
+      boolean isSuccessful = false;
+      try {
+        Database.login(usernameTxt.getText(), passwordTxt.getText());
+        isSuccessful = true;
+      } catch (Exception e) {
+        Platform.runLater(() -> errorLbl.setText(rb.getString(e.getMessage())));
+      } finally {
+        try (var activityWrite = Files.newBufferedWriter(activityPath, StandardCharsets.UTF_8,
+            StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
+          String result =
+              "Attempted login : " + LocalDateTime.now() + " : [username='" + usernameTxt.getText()
+                  +
+                  "', isSuccessful=" + isSuccessful + "]\n";
+          activityWrite.write(result);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+      Platform.runLater(() -> {
+        ApplicationManager.setScene("main");
+        loginBtn.setDisable(false);
+        loginBtn.setVisible(true);
+        errorLbl.setVisible(true);
+        progressBar.setVisible(false);
+      });
+    });
+    dbService.shutdown();
+  }
 
-    @FXML
-    void onUsernameKeyTyped(KeyEvent event) {
-        loginBtn.setDisable(usernameTxt.getText().equals(""));
-    }
+  @FXML
+  void onActionPassword(ActionEvent event) {
+    borderPane.requestFocus();
+    loginBtn.fire();
+  }
 
-    @FXML
-    private BorderPane borderPane;
+  @FXML
+  void onActionUsername(ActionEvent event) {
+    borderPane.requestFocus();
+    loginBtn.fire();
+  }
 
-    @FXML
-    private TextField usernameTxt;
+  @FXML
+  void onUsernameKeyTyped(KeyEvent event) {
+    loginBtn.setDisable(usernameTxt.getText().equals(""));
+  }
 
-    @FXML
-    private PasswordField passwordTxt;
+  @FXML
+  private BorderPane borderPane;
 
-    @FXML
-    private Button loginBtn;
+  @FXML
+  private TextField usernameTxt;
 
-    @FXML
-    private ProgressBar progressBar;
+  @FXML
+  private PasswordField passwordTxt;
 
-    @FXML
-    private Label errorLbl;
+  @FXML
+  private Button loginBtn;
 
-    @FXML
-    private Label zoneIdTxt;
+  @FXML
+  private ProgressBar progressBar;
+
+  @FXML
+  private Label errorLbl;
+
+  @FXML
+  private Label zoneIdTxt;
 
 }
