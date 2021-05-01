@@ -23,19 +23,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class AppointmentController implements Initializable {
+public class AppTabController implements Initializable {
     private MainController mainController;
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
+    }
+
+    public void populate() {
+        populateTable();
+        populateContactComboBox();
+        populateUserComboBox();
+        populateCustComboBox();
     }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         populateDurationComboBox();
         setupTable();
-        populateTable();
-        populateContactComboBox();
-        populateUserComboBox();
+
         appDatePicker.setDayCellFactory(picker -> new DateCell() {
             public void updateItem(LocalDate date, boolean empty) {
                 super.updateItem(date, empty);
@@ -106,7 +111,7 @@ public class AppointmentController implements Initializable {
     }
 
     public void populateTable() {
-        appTableProgress.setVisible(true);
+        mainController.getTableProgress().setVisible(true);
         MainController.getDbService().submit(() -> {
             try {
                 List<Appointment> appointments = Database.getAppointments();
@@ -116,7 +121,7 @@ public class AppointmentController implements Initializable {
                 Platform.runLater(() -> mainController.notify("Failed to populate table. Check connection.",
                         MainController.NotificationType.ERROR, false));
             } finally {
-                Platform.runLater(() -> appTableProgress.setVisible(false));
+                Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
             }
         });
     }
@@ -191,7 +196,7 @@ public class AppointmentController implements Initializable {
 
     @FXML
     void onActionRefresh(ActionEvent event) {
-        appTableProgress.setVisible(true);
+        mainController.getTableProgress().setVisible(true);
         appTableView.getSelectionModel().clearSelection();
         setCollapseToolDrawer(true);
         populateTable();
@@ -207,7 +212,7 @@ public class AppointmentController implements Initializable {
                         MainController.NotificationType.ERROR, false)
                 );
             }finally {
-                Platform.runLater(() -> appTableProgress.setVisible(false));
+                Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
             }
         });
         mainController.refresh();
@@ -238,29 +243,31 @@ public class AppointmentController implements Initializable {
         MainController.getDbService().submit(() -> {
             try {
                 List<Customer> customers = Database.getCustomers();
-                appCustComboBox.getItems().setAll();
-                appCustComboBox.setPromptText("Customer");
-                appCustComboBox.setConverter(new StringConverter<>() {
-                    @Override
-                    public String toString(Customer customer) {
-                        return customer.getCustomerId() + ": " + customer.getCustomerName();
-                    }
-
-                    @Override
-                    public Customer fromString(String s) {
-                        return null;
-                    }
-                });
-                appCustComboBox.setButtonCell(new ListCell<>() {
-                    @Override
-                    protected void updateItem(Customer item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (empty || item == null) {
-                            setText("Customer");
-                        } else {
-                            setText(appCustComboBox.getConverter().toString(item));
+                Platform.runLater(() -> {
+                    appCustComboBox.getItems().setAll(customers);
+                    appCustComboBox.setPromptText("Customer");
+                    appCustComboBox.setConverter(new StringConverter<>() {
+                        @Override
+                        public String toString(Customer customer) {
+                            return customer.getCustomerId() + ": " + customer.getCustomerName();
                         }
-                    }
+
+                        @Override
+                        public Customer fromString(String s) {
+                            return null;
+                        }
+                    });
+                    appCustComboBox.setButtonCell(new ListCell<>() {
+                        @Override
+                        protected void updateItem(Customer item, boolean empty) {
+                            super.updateItem(item, empty);
+                            if (empty || item == null) {
+                                setText("Customer");
+                            } else {
+                                setText(appCustComboBox.getConverter().toString(item));
+                            }
+                        }
+                    });
                 });
             } catch (SQLException e) {
                 Platform.runLater(() -> mainController.notify("Failed to populate customer box. Check connection.",
@@ -405,7 +412,7 @@ public class AppointmentController implements Initializable {
     }
 
     private void confirmAddApp(Appointment app) {
-        appTableProgress.setVisible(true);
+        mainController.getTableProgress().setVisible(true);
         MainController.getDbService().submit(() -> {
             try {
                 Database.insertAppointment(app);
@@ -420,13 +427,13 @@ public class AppointmentController implements Initializable {
                 Platform.runLater(() -> mainController.notify("Failed to add appointment. Check connection.",
                         MainController.NotificationType.ERROR, false));
             } finally {
-                Platform.runLater(() -> appTableProgress.setVisible(false));
+                Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
             }
         });
     }
 
     private void confirmDeleteApp(Appointment appointment) {
-        appTableProgress.setVisible(true);
+        mainController.getTableProgress().setVisible(true);
         MainController.getDbService().submit(() -> {
             try {
                 Database.deleteAppointment(appointment);
@@ -443,7 +450,7 @@ public class AppointmentController implements Initializable {
                 Platform.runLater(() -> mainController.notify("Failed to delete appointment. Check connection.",
                         MainController.NotificationType.ERROR, false));
             } finally {
-                Platform.runLater(() -> appTableProgress.setVisible(false));
+                Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
             }
         });
     }
@@ -653,7 +660,7 @@ public class AppointmentController implements Initializable {
     @FXML
     private TableColumn<Appointment, Integer> appCustIdCol;
 
-    @FXML
-    private ProgressIndicator appTableProgress;
+//    @FXML
+//    private ProgressIndicator appTableProgress;
 
 }

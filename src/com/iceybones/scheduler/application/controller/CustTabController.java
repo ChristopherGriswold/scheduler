@@ -17,7 +17,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class CustomerController implements Initializable {
+public class CustTabController implements Initializable {
     private MainController mainController;
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
@@ -27,8 +27,6 @@ public class CustomerController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setupTable();
-        populateTable();
-        populateCountryBox();
         custTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
                 deleteCustomerBtn.setDisable(false);
@@ -43,6 +41,11 @@ public class CustomerController implements Initializable {
                 }
             }
         });
+    }
+
+    public void populate() {
+        populateTable();
+        populateCountryBox();
     }
 
     void tryActivateConfirmBtn() {
@@ -64,7 +67,7 @@ public class CustomerController implements Initializable {
 
     public void populateTable() {
         System.out.println("Populate table called");
-        custTableProgress.setVisible(true);
+        mainController.getTableProgress().setVisible(true);
         MainController.getDbService().submit(() -> {
             try {
                 List<Customer> customers = Database.getCustomers();
@@ -74,7 +77,7 @@ public class CustomerController implements Initializable {
                 Platform.runLater(() -> mainController.notify("Failed to populate customer table. Check connection.",
                         MainController.NotificationType.ERROR, false));
             } finally {
-                Platform.runLater(() -> custTableProgress.setVisible(false));
+                Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
             }
         });
     }
@@ -122,7 +125,7 @@ public class CustomerController implements Initializable {
 
     @FXML
     void onActionRefresh(ActionEvent event) {
-        custTableProgress.setVisible(true);
+        mainController.getTableProgress().setVisible(true);
         custTableView.getSelectionModel().clearSelection();
         setCollapseToolDrawer(true);
         resetToolButtons();
@@ -138,7 +141,7 @@ public class CustomerController implements Initializable {
                 Platform.runLater(() -> mainController.notify("Failed to refresh database. Check connection.",
                         MainController.NotificationType.ERROR, false));
             } finally {
-                Platform.runLater(() -> custTableProgress.setVisible(false));
+                Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
             }
         });
         mainController.refresh();
@@ -210,7 +213,7 @@ public class CustomerController implements Initializable {
     }
 
     private void confirmAddCustomer(Customer customer) {
-        custTableProgress.setVisible(true);
+        mainController.getTableProgress().setVisible(true);
         MainController.getDbService().submit(() -> {
             try {
                 Database.insertCustomer(customer);
@@ -225,13 +228,13 @@ public class CustomerController implements Initializable {
                 Platform.runLater(() -> mainController.notify("Failed to add customer. Check connection and input.",
                         MainController.NotificationType.ERROR, false));
             } finally {
-                Platform.runLater(() -> custTableProgress.setVisible(false));
+                Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
             }
         });
     }
 
     private void confirmDeleteCustomer(Customer customer) {
-        custTableProgress.setVisible(true);
+        mainController.getTableProgress().setVisible(true);
         MainController.getDbService().submit(() -> {
             try {
                 Database.deleteCustomer(customer);
@@ -247,13 +250,13 @@ public class CustomerController implements Initializable {
                 Platform.runLater(() -> mainController.notify("Failed to delete customer. Check connection.",
                         MainController.NotificationType.ERROR, false));
             } finally {
-                Platform.runLater(() -> custTableProgress.setVisible(false));
+                Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
             }
         });
     }
 
     private void confirmUpdateCustomer(Customer newCust, Customer original) {
-        custTableProgress.setVisible(true);
+        mainController.getTableProgress().setVisible(true);
         MainController.getDbService().submit(() -> {
             try {
                 Database.updateCustomer(newCust);
@@ -269,7 +272,7 @@ public class CustomerController implements Initializable {
                 Platform.runLater(() -> mainController.notify("Failed to update customer. Check connection.",
                         MainController.NotificationType.ERROR, false));
             } finally {
-                Platform.runLater(() -> custTableProgress.setVisible(false));
+                Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
             }
         });
     }
@@ -437,8 +440,5 @@ public class CustomerController implements Initializable {
 
     @FXML
     private TableColumn<Customer, String> custPhoneCol;
-
-    @FXML
-    private ProgressIndicator custTableProgress;
 
 }

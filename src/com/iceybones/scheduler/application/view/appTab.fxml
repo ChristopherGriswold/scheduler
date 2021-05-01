@@ -5,7 +5,6 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
@@ -26,7 +25,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<Tab fx:id="appTab" text="Appointments" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.iceybones.scheduler.application.controller.AppointmentController">
+<Tab fx:id="appTab" text="Appointments" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.iceybones.scheduler.application.controller.AppTabController">
   <content>
     <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
       <children>
@@ -87,7 +86,7 @@
                 </Button>
               </items>
             </ToolBar>
-            <TitledPane fx:id="appToolDrawer" expanded="false" collapsible="false" focusTraversable="false" pickOnBounds="false">
+            <TitledPane fx:id="appToolDrawer" collapsible="false" expanded="false" focusTraversable="false" pickOnBounds="false">
               <opaqueInsets>
                 <Insets />
               </opaqueInsets>
@@ -201,7 +200,6 @@
             </TableView>
           </children>
         </VBox>
-        <ProgressIndicator fx:id="appTableProgress" scaleX="0.1" scaleY="0.1" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
       </children>
     </AnchorPane>
   </content>

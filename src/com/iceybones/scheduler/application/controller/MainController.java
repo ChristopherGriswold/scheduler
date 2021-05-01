@@ -54,6 +54,8 @@ public class MainController implements Initializable {
         stage.setTitle("iceybones Scheduler");
         appTabController.setMainController(this);
         custTabController.setMainController(this);
+        appTabController.populate();
+        custTabController.populate();
     }
 
     public void notify(String message, NotificationType type, Boolean undoable) {
@@ -75,6 +77,7 @@ public class MainController implements Initializable {
 
     @FXML
     void onActionUndoLink(ActionEvent event) {
+        tableProgress.setVisible(true);
         appTabController.resetToolButtons();
         appTabController.setCollapseToolDrawer(true);
         custTabController.resetToolButtons();
@@ -89,6 +92,8 @@ public class MainController implements Initializable {
                 });
             } catch (SQLException e) {
                 notify("Failed to undo. Check connection.", NotificationType.ERROR, false);
+            } finally {
+                tableProgress.setVisible(false);
             }
         });
     }
@@ -121,11 +126,15 @@ public class MainController implements Initializable {
         return successImg;
     }
 
-    @FXML
-    private AppointmentController appTabController;
+    public ProgressIndicator getTableProgress() {
+        return tableProgress;
+    }
 
     @FXML
-    private CustomerController custTabController;
+    private AppTabController appTabController;
+
+    @FXML
+    private CustTabController custTabController;
 
     @FXML
     private TabPane tabPane;
@@ -147,5 +156,8 @@ public class MainController implements Initializable {
 
     @FXML
     private Hyperlink undoLink;
+
+    @FXML
+    private ProgressIndicator tableProgress;
 
 }
