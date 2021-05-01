@@ -36,6 +36,7 @@ public class Database {
       "SET (Title, Description, Location, Type, Start, End, Last_Update, Last_Updated_By, " +
       "Customer_ID, User_ID, Contact_ID)\n" +
       "VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)";
+  private static final String DELETE_CUST_APP_SQL = "DELETE FROM appointments WHERE Customer_ID = ?";
   private static final String DELETE_CUST_SQL = "DELETE FROM customers WHERE Customer_ID = ?";
   private static final String DELETE_APP_SQL = "DELETE FROM appointments WHERE Appointment_ID = ?";
   private static final String GET_DIVISIONS_SQL =
@@ -77,8 +78,8 @@ public class Database {
 
   public static void rollback() throws SQLException {
     getConnection().rollback();
-    cacheAppointments();
     cacheCustomers();
+    cacheAppointments();
   }
 
   public static void commit() throws SQLException {
@@ -247,10 +248,14 @@ public class Database {
 
   public static void deleteCustomer(Customer customer) throws SQLException {
     commit();
-    var sql = getConnection().prepareStatement(DELETE_CUST_SQL);
+    var sql = getConnection().prepareStatement(DELETE_CUST_APP_SQL);
+    sql.setInt(1, customer.getCustomerId());
+    sql.executeUpdate();
+    sql = getConnection().prepareStatement(DELETE_CUST_SQL);
     sql.setInt(1, customer.getCustomerId());
     sql.executeUpdate();
     customers.remove(customer);
+    cacheAppointments();
   }
 
   ///////////////////Appointment Methods//////////////////////////

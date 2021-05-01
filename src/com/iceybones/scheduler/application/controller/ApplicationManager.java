@@ -27,7 +27,13 @@ public class ApplicationManager extends Application {
       }
     });
     ApplicationManager.stage = stage;
-    setScene("login");
+    //TODO REMOVE BEFORE ALL SAID AND DONE
+    try {
+      Database.login("test", "test");
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    setScene("main");
     stage.show();
   }
 

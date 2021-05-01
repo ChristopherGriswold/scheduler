@@ -117,7 +117,7 @@
                         <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
                           <children>
                             <Label minWidth="-Infinity" text="Name:" />
-                            <TextField fx:id="custNameField" onKeyTyped="#onKeyTypedCustField" HBox.hgrow="ALWAYS" />
+                            <TextField fx:id="custNameField" onKeyTyped="#onKeyTypedCustField" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                           <GridPane.margin>
                             <Insets />
@@ -126,25 +126,25 @@
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.rowIndex="1">
                           <children>
                             <Label minWidth="-Infinity" text="Address:" />
-                            <TextField fx:id="custAddressField" onKeyTyped="#onKeyTypedCustField" HBox.hgrow="ALWAYS" />
+                            <TextField fx:id="custAddressField" onKeyTyped="#onKeyTypedCustField" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                           <children>
                             <Label minWidth="-Infinity" text="Postal Code:" />
-                            <TextField fx:id="custPostalCodeField" onKeyTyped="#onKeyTypedCustField" HBox.hgrow="ALWAYS" />
+                            <TextField fx:id="custPostalCodeField" onKeyTyped="#onKeyTypedCustField" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="2">
                           <children>
                             <Label minWidth="-Infinity" text="Phone:" />
-                            <TextField fx:id="custPhoneField" onKeyTyped="#onKeyTypedCustField" HBox.hgrow="ALWAYS" />
+                            <TextField fx:id="custPhoneField" onKeyTyped="#onKeyTypedCustField" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" nodeOrientation="LEFT_TO_RIGHT" spacing="8.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
                           <children>
-                            <ComboBox fx:id="countryComboBox" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionCountryComboBox" prefWidth="999.0" promptText="Country" HBox.hgrow="ALWAYS" />
-                            <ComboBox fx:id="stateComboBox" disable="true" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionStateComboBox" prefWidth="999.0" promptText="State" HBox.hgrow="ALWAYS" />
+                            <ComboBox fx:id="countryComboBox" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionCountryComboBox" prefWidth="999.0" promptText="Country" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
+                            <ComboBox fx:id="stateComboBox" disable="true" maxWidth="1.7976931348623157E308" nodeOrientation="LEFT_TO_RIGHT" onAction="#onActionStateComboBox" prefWidth="999.0" promptText="State" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                             <Button fx:id="custConfirmBtn" disable="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onActionConfirm" HBox.hgrow="NEVER">
                               <graphic>
                                 <ImageView fx:id="custConfirmBtnImg" fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
@@ -165,7 +165,7 @@
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1">
                           <children>
                             <Label minWidth="-Infinity" text="ID:" />
-                            <TextField fx:id="custIdField" disable="true" editable="false" text="Auto-Generated" HBox.hgrow="ALWAYS" />
+                            <TextField fx:id="custIdField" disable="true" editable="false" promptText="Auto-Generated" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>
                       </children>

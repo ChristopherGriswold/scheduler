@@ -137,6 +137,14 @@ public class MainController implements Initializable {
     return tableProgress;
   }
 
+  public AppTabController getAppTabController() {
+    return appTabController;
+  }
+
+  public CustTabController getCustTabController() {
+    return custTabController;
+  }
+
   @FXML
   private AppTabController appTabController;
 
@@ -145,6 +153,10 @@ public class MainController implements Initializable {
 
   @FXML
   private TabPane tabPane;
+
+  public TabPane getTabPane() {
+    return tabPane;
+  }
 
   @FXML
   private Tab appTab;

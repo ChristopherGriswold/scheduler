@@ -3,18 +3,27 @@ package com.iceybones.scheduler.application.controller;
 import com.iceybones.scheduler.application.model.Country;
 import com.iceybones.scheduler.application.model.Customer;
 import com.iceybones.scheduler.application.model.Division;
-import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
-import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyEvent;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.ResourceBundle;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
 
 public class CustTabController implements Initializable {
 
@@ -34,7 +43,7 @@ public class CustTabController implements Initializable {
             editCustomerBtn.setDisable(false);
             addCustAppBtn.setDisable(false);
             if (oldSelection != null && custToolDrawer.isExpanded()) {
-              openCustToolDrawer(custTableView.getSelectionModel().getSelectedItem());
+              openToolDrawer(custTableView.getSelectionModel().getSelectedItem());
             }
             if (addCustomerBtn.isSelected()) {
               addCustomerBtn.setSelected(false);
@@ -49,15 +58,6 @@ public class CustTabController implements Initializable {
     populateCountryBox();
   }
 
-  void tryActivateConfirmBtn() {
-    custConfirmBtn
-        .setDisable(custNameField.getText().equals("") || custPhoneField.getText().equals("") ||
-            custAddressField.getText().equals("") || custPostalCodeField.getText().equals("") ||
-            countryComboBox.getSelectionModel().isEmpty()
-            || stateComboBox.getSelectionModel().isEmpty() &&
-            !deleteCustomerBtn.isSelected());
-  }
-
   private void setupTable() {
     custIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
     custNameCol.setCellValueFactory(new PropertyValueFactory<>("customerName"));
@@ -69,7 +69,6 @@ public class CustTabController implements Initializable {
   }
 
   public void populateTable() {
-    System.out.println("Populate table called");
     mainController.getTableProgress().setVisible(true);
     MainController.getDbService().submit(() -> {
       try {
@@ -94,7 +93,7 @@ public class CustTabController implements Initializable {
 
   private void clearToolDrawer() {
     custNameField.setText("");
-    custIdField.setText("Auto-Generated");
+    custIdField.setText("");
     custPhoneField.setText("");
     custAddressField.setText("");
     custPostalCodeField.setText("");
@@ -125,29 +124,6 @@ public class CustTabController implements Initializable {
         }
       }
     });
-  }
-
-  @FXML
-  void onActionRefresh(ActionEvent event) {
-    mainController.getTableProgress().setVisible(true);
-    custTableView.getSelectionModel().clearSelection();
-    setCollapseToolDrawer(true);
-    resetToolButtons();
-    MainController.getDbService().submit(() -> {
-      try {
-        Database.commit();
-        Platform.runLater(() -> mainController.notify("Changes have been committed.",
-            MainController.NotificationType.SUCCESS, false)
-        );
-      } catch (SQLException e) {
-        Platform
-            .runLater(() -> mainController.notify("Failed to refresh database. Check connection.",
-                MainController.NotificationType.ERROR, false));
-      } finally {
-        Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
-      }
-    });
-    mainController.refresh();
   }
 
   void resetToolButtons() {
@@ -190,9 +166,21 @@ public class CustTabController implements Initializable {
                 MainController.NotificationType.ERROR, false));
       }
     });
+    stateComboBox.setPromptText("State");
+    stateComboBox.setButtonCell(new ListCell<>() {
+      @Override
+      protected void updateItem(Division item, boolean empty) {
+        super.updateItem(item, empty);
+        if (empty || item == null) {
+          setText("State");
+        } else {
+          setText(item.toString());
+        }
+      }
+    });
   }
 
-  void openCustToolDrawer(Customer cust) {
+  void openToolDrawer(Customer cust) {
     setCollapseToolDrawer(false);
     if (cust == null) {
       clearToolDrawer();
@@ -215,7 +203,7 @@ public class CustTabController implements Initializable {
     }
   }
 
-  private void confirmAddCustomer(Customer customer) {
+  private void confirmAdd(Customer customer) {
     mainController.getTableProgress().setVisible(true);
     MainController.getDbService().submit(() -> {
       try {
@@ -237,7 +225,7 @@ public class CustTabController implements Initializable {
     });
   }
 
-  private void confirmDeleteCustomer(Customer customer) {
+  private void confirmDelete(Customer customer) {
     mainController.getTableProgress().setVisible(true);
     MainController.getDbService().submit(() -> {
       try {
@@ -246,11 +234,13 @@ public class CustTabController implements Initializable {
           clearToolDrawer();
           setCollapseToolDrawer(true);
           resetToolButtons();
-          custTableView.getItems().remove(customer);
+          populateTable();
+          mainController.getAppTabController().populateTable();
           mainController.notify(customer.getCustomerName() + " has been removed from the database.",
               MainController.NotificationType.DELETE, true);
         });
       } catch (SQLException e) {
+        e.printStackTrace();
         Platform
             .runLater(() -> mainController.notify("Failed to delete customer. Check connection.",
                 MainController.NotificationType.ERROR, false));
@@ -260,7 +250,7 @@ public class CustTabController implements Initializable {
     });
   }
 
-  private void confirmUpdateCustomer(Customer newCust, Customer original) {
+  private void confirmUpdate(Customer newCust, Customer original) {
     mainController.getTableProgress().setVisible(true);
     MainController.getDbService().submit(() -> {
       try {
@@ -283,11 +273,20 @@ public class CustTabController implements Initializable {
     });
   }
 
+  void tryActivateConfirmBtn() {
+    custConfirmBtn
+        .setDisable(custNameField.getText().equals("") || custPhoneField.getText().equals("") ||
+            custAddressField.getText().equals("") || custPostalCodeField.getText().equals("") ||
+            countryComboBox.getSelectionModel().isEmpty()
+            || stateComboBox.getSelectionModel().isEmpty() &&
+            !deleteCustomerBtn.isSelected());
+  }
+
   @FXML
   void onActionConfirm(ActionEvent event) {
     Customer customer = new Customer();
     customer.setCustomerName(custNameField.getText());
-    customer.setCustomerId((custIdField.getText().equals("Auto-Generated") ? 0
+    customer.setCustomerId((custIdField.getText().isEmpty() ? 0
         : Integer.parseInt(custIdField.getText())));
     customer.setPhone(custPhoneField.getText());
     customer.setAddress(custAddressField.getText());
@@ -296,11 +295,11 @@ public class CustTabController implements Initializable {
     customer.setLastUpdatedBy(Database.getConnectedUser());
     customer.setDivision(stateComboBox.getValue());
     if (addCustomerBtn.isSelected()) {
-      confirmAddCustomer(customer);
+      confirmAdd(customer);
     } else if (deleteCustomerBtn.isSelected()) {
-      confirmDeleteCustomer(custTableView.getSelectionModel().getSelectedItem());
+      confirmDelete(custTableView.getSelectionModel().getSelectedItem());
     } else if (editCustomerBtn.isSelected()) {
-      confirmUpdateCustomer(customer, custTableView.getSelectionModel().getSelectedItem());
+      confirmUpdate(customer, custTableView.getSelectionModel().getSelectedItem());
     }
   }
 
@@ -313,7 +312,7 @@ public class CustTabController implements Initializable {
     if (addCustomerBtn.isSelected()) {
       setToolDrawerEditable(true);
       custConfirmBtnImg.setImage(MainController.getAddImg());
-      openCustToolDrawer(null);
+      openToolDrawer(null);
     } else {
       setCollapseToolDrawer(true);
     }
@@ -325,7 +324,7 @@ public class CustTabController implements Initializable {
       setToolDrawerEditable(false);
       custConfirmBtnImg.setImage(MainController.getDeleteImg());
       custConfirmBtn.setDisable(false);
-      openCustToolDrawer(custTableView.getSelectionModel().getSelectedItem());
+      openToolDrawer(custTableView.getSelectionModel().getSelectedItem());
     } else {
       setCollapseToolDrawer(true);
     }
@@ -337,7 +336,7 @@ public class CustTabController implements Initializable {
       setToolDrawerEditable(true);
       custConfirmBtnImg.setImage(MainController.getEditImg());
       custConfirmBtn.setDisable(true);
-      openCustToolDrawer(custTableView.getSelectionModel().getSelectedItem());
+      openToolDrawer(custTableView.getSelectionModel().getSelectedItem());
     } else {
       setCollapseToolDrawer(true);
     }
@@ -345,11 +344,12 @@ public class CustTabController implements Initializable {
 
   @FXML
   void onActionAddCustApp(ActionEvent event) {
-    custTab.getTabPane().getSelectionModel().select(0);
-    setCollapseToolDrawer(false);
-    //TODO THIS NEEDS FIXED
-//      custTab.getTabPane().getTabs().get(0).
-//      appCustComboBox.getSelectionModel().select(custTableView.getSelectionModel().getSelectedItem());
+    setCollapseToolDrawer(true);
+    resetToolButtons();
+    mainController.getTabPane().getSelectionModel().select(0);
+      mainController.getAppTabController().addAppointment(custTableView.getSelectionModel()
+          .getSelectedItem());
+    custTableView.getSelectionModel().clearSelection();
   }
 
   @FXML
@@ -360,6 +360,7 @@ public class CustTabController implements Initializable {
       populateStateBox(countryComboBox.getSelectionModel().getSelectedItem());
     }
     tryActivateConfirmBtn();
+
   }
 
   @FXML
@@ -370,6 +371,29 @@ public class CustTabController implements Initializable {
   @FXML
   void onKeyTypedCustField(KeyEvent event) {
     tryActivateConfirmBtn();
+  }
+
+  @FXML
+  void onActionRefresh(ActionEvent event) {
+    mainController.getTableProgress().setVisible(true);
+    custTableView.getSelectionModel().clearSelection();
+    setCollapseToolDrawer(true);
+    resetToolButtons();
+    MainController.getDbService().submit(() -> {
+      try {
+        Database.commit();
+        Platform.runLater(() -> mainController.notify("Changes have been committed.",
+            MainController.NotificationType.SUCCESS, false)
+        );
+      } catch (SQLException e) {
+        Platform
+            .runLater(() -> mainController.notify("Failed to refresh database. Check connection.",
+                MainController.NotificationType.ERROR, false));
+      } finally {
+        Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
+      }
+    });
+    mainController.refresh();
   }
 
   @FXML
