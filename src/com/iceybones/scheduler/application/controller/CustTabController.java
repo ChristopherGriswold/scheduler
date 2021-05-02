@@ -13,6 +13,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ComboBoxBase;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TableColumn;
@@ -109,14 +110,8 @@ public class CustTabController implements Initializable {
     custPhoneField.setText(null);
     custAddressField.setText(null);
     custPostalCodeField.setText(null);
-    var handle = countryComboBox.getOnAction();
-    countryComboBox.setOnAction(null);
-    countryComboBox.setValue(null);
-    countryComboBox.setOnAction(handle);
-    handle = stateComboBox.getOnAction();
-    stateComboBox.setOnAction(null);
-    stateComboBox.setValue(null);
-    stateComboBox.setOnAction(handle);
+    setValHelper(countryComboBox, null);
+    setValHelper(stateComboBox, null);
     stateComboBox.setDisable(true);
   }
 
@@ -141,7 +136,8 @@ public class CustTabController implements Initializable {
   void populateCountryBox() {
     MainController.getDbService().submit(() -> {
       try {
-        countryComboBox.getItems().addAll(Database.getCountries());
+        List<Country> countries = Database.getCountries();
+        Platform.runLater(() -> countryComboBox.getItems().addAll(countries));
       } catch (SQLException e) {
         Platform.runLater(
             () -> mainController.notify("Failed to populate country box. Check connection.",
@@ -154,7 +150,8 @@ public class CustTabController implements Initializable {
     stateComboBox.getItems().clear();
     MainController.getDbService().submit(() -> {
       try {
-        stateComboBox.getItems().addAll(Database.getDivisionsByCountry(country));
+        List<Division> division = Database.getDivisionsByCountry(country);
+        Platform.runLater(() -> stateComboBox.getItems().addAll(division));
       } catch (SQLException e) {
         Platform
             .runLater(() -> mainController.notify("Failed to populate state box. Check connection.",
@@ -185,24 +182,27 @@ public class CustTabController implements Initializable {
       custPhoneField.setText(cust.getPhone());
       custAddressField.setText(cust.getAddress());
       custPostalCodeField.setText(cust.getPostalCode());
-      var handler = countryComboBox.getOnAction();
-      countryComboBox.setOnAction(null);
-      countryComboBox.setValue(cust.getDivision().getCountry());
-      countryComboBox.setOnAction(handler);
+      setValHelper(countryComboBox, cust.getDivision().getCountry());
       populateStateBox(cust.getDivision().getCountry());
-      var handler2 = stateComboBox.getOnAction();
-      stateComboBox.setOnAction(null);
-      stateComboBox.setValue(cust.getDivision());
-      stateComboBox.setOnAction(handler2);
-
+      setValHelper(stateComboBox, cust.getDivision());
     }
+    tryActivateConfirmBtn();
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @Deprecated
+  private void setValHelper(ComboBoxBase box, Object val) {
+    var handler = box.getOnAction();
+    box.setOnAction(null);
+    box.setValue(val);
+    box.setOnAction(handler);
   }
 
   private void confirmAdd(Customer customer) {
     mainController.getTableProgress().setVisible(true);
     MainController.getDbService().submit(() -> {
       try {
-        Database.insertCustomer(customer);
+        int custId = Database.insertCustomer(customer);
         Platform.runLater(() -> {
           setCollapseToolDrawer(true);
           resetToolButtons();
@@ -272,9 +272,7 @@ public class CustTabController implements Initializable {
     custConfirmBtn
         .setDisable(custNameField.getText() == null || custPhoneField.getText() == null ||
             custAddressField.getText() == null || custPostalCodeField.getText() == null ||
-            countryComboBox.getSelectionModel() == null
-            || stateComboBox.getSelectionModel() == null &&
-            !deleteCustomerBtn.isSelected());
+            countryComboBox.getValue() == null || stateComboBox.getValue()== null);
   }
 
   @FXML
@@ -318,7 +316,6 @@ public class CustTabController implements Initializable {
     if (deleteCustomerBtn.isSelected()) {
       setToolDrawerEditable(false);
       custConfirmBtnImg.setImage(MainController.getDeleteImg());
-//      custConfirmBtn.setDisable(false);
       openToolDrawer(custTableView.getSelectionModel().getSelectedItem());
     } else {
       setCollapseToolDrawer(true);

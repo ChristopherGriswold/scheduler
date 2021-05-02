@@ -35,81 +35,73 @@
               <children>
                 <ToolBar prefHeight="40.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
                   <items>
-                    <HBox fillHeight="false">
-                      <children>
-                        <ToggleButton fx:id="addAppBtn" accessibleHelp="Add Contact" accessibleText="Add Contact" mnemonicParsing="false" onAction="#onActionAddApp">
-                          <graphic>
-                            <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                              <image>
-                                <Image url="@../resources/add_appointment.png" />
-                              </image>
-                            </ImageView>
-                          </graphic>
-                          <tooltip>
-                            <Tooltip text="Add New Appointment" />
-                          </tooltip>
-                          <toggleGroup>
-                            <ToggleGroup fx:id="appToggleGroup" />
-                          </toggleGroup>
-                        </ToggleButton>
-                        <ToggleButton fx:id="deleteAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionDeleteApp" toggleGroup="$appToggleGroup">
-                          <graphic>
-                            <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                              <image>
-                                <Image url="@../resources/remove_appointment.png" />
-                              </image>
-                            </ImageView>
-                          </graphic>
-                          <tooltip>
-                            <Tooltip text="Remove Selected Appointment" />
-                          </tooltip>
-                        </ToggleButton>
-                        <ToggleButton fx:id="editAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionEditApp" toggleGroup="$appToggleGroup">
-                          <graphic>
-                            <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                              <image>
-                                <Image url="@../resources/edit_appointment.png" />
-                              </image>
-                            </ImageView>
-                          </graphic>
-                          <tooltip>
-                            <Tooltip text="Edit Selected Appointment" />
-                          </tooltip>
-                        </ToggleButton>
-                      </children>
-                    </HBox>
+                  <ToggleButton fx:id="addAppBtn" accessibleHelp="Add Contact" accessibleText="Add Contact" mnemonicParsing="false" onAction="#onActionAddApp">
+                    <graphic>
+                      <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                        <image>
+                          <Image url="@../resources/add_appointment.png" />
+                        </image>
+                      </ImageView>
+                    </graphic>
+                    <tooltip>
+                      <Tooltip text="Add New Appointment" />
+                    </tooltip>
+                    <toggleGroup>
+                      <ToggleGroup fx:id="appToggleGroup" />
+                    </toggleGroup>
+                  </ToggleButton>
+                  <ToggleButton fx:id="deleteAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionDeleteApp" toggleGroup="$appToggleGroup">
+                    <graphic>
+                      <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                        <image>
+                          <Image url="@../resources/remove_appointment.png" />
+                        </image>
+                      </ImageView>
+                    </graphic>
+                    <tooltip>
+                      <Tooltip text="Remove Selected Appointment" />
+                    </tooltip>
+                  </ToggleButton>
+                  <ToggleButton fx:id="editAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionEditApp" toggleGroup="$appToggleGroup">
+                    <graphic>
+                      <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                        <image>
+                          <Image url="@../resources/edit_appointment.png" />
+                        </image>
+                      </ImageView>
+                    </graphic>
+                    <tooltip>
+                      <Tooltip text="Edit Selected Appointment" />
+                    </tooltip>
+                  </ToggleButton>
                   </items>
                 </ToolBar>
                 <ToolBar fx:id="toolbar" HBox.hgrow="NEVER">
                   <items>
-                    <HBox fillHeight="false">
-                      <children>
-                        <Button fx:id="modeBtn" mnemonicParsing="false" onAction="#onActionAppMode">
-                          <graphic>
-                            <ImageView fx:id="modeImgView"  fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                              <image>
-                                <Image url="@../resources/green_clock.png" />
-                              </image>
-                            </ImageView>
-                          </graphic>
-                          <tooltip>
-                            <Tooltip fx:id="modeTooltip" text="Show Month" />
-                          </tooltip>
-                        </Button>
-                        <Button fx:id="appRefreshBtn" mnemonicParsing="false" onAction="#onActionRefresh">
-                          <graphic>
-                            <ImageView fitHeight="150.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                              <image>
-                                <Image url="@../resources/refresh_icon.png" />
-                              </image>
-                            </ImageView>
-                          </graphic>
-                          <tooltip>
-                            <Tooltip text="Refresh" />
-                          </tooltip>
-                        </Button>
-                      </children>
-                    </HBox>
+                  <Button fx:id="modeBtn" mnemonicParsing="false" onAction="#onActionAppMode">
+                    <graphic>
+                      <ImageView fx:id="modeImgView" fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                        <image>
+                          <Image url="@../resources/green_clock.png" />
+                        </image>
+                      </ImageView>
+                    </graphic>
+                    <tooltip>
+                      <Tooltip fx:id="modeTooltip" text="Show Month" />
+                    </tooltip>
+                  </Button>
+                  <Button fx:id="appRefreshBtn" mnemonicParsing="false" onAction="#onActionRefresh">
+                    <graphic>
+                      <ImageView fitHeight="150.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                        <image>
+                          <Image url="@../resources/refresh_icon.png" />
+                        </image>
+                      </ImageView>
+                    </graphic>
+                    <tooltip>
+                      <Tooltip text="Refresh" />
+                    </tooltip>
+                  </Button>
                   </items>
                 </ToolBar>
               </children>
@@ -212,7 +204,7 @@
             </TitledPane>
             <TableView fx:id="appTableView" VBox.vgrow="ALWAYS">
               <columns>
-                <TableColumn fx:id="appIdCol" prefWidth="75.0" text="Appointment ID" />
+                <TableColumn fx:id="appIdCol" prefWidth="-1.0" text="ID" />
                 <TableColumn fx:id="appTitleCol" prefWidth="75.0" text="Title" />
                 <TableColumn fx:id="appDescriptionCol" prefWidth="75.0" text="Description" />
                 <TableColumn fx:id="appLocationCol" prefWidth="75.0" text="Location" />

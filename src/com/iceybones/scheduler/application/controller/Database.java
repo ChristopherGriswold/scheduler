@@ -23,7 +23,8 @@ public class Database {
   private static final String GET_APPS_SQL =
       "SELECT Title, Appointment_ID, Description, Location, " +
           "Type, Start, End, Customer_ID, Contact_ID, User_ID\n" +
-          "FROM appointments";
+          "FROM appointments\n"
+          + "ORDER BY Appointment_ID";
   private static final String INSERT_CUST_SQL = "INSERT INTO customers\n" +
       "(Customer_Name, Address, Postal_Code, Phone, Create_Date, " +
       "Created_By, Last_Update, Last_Updated_By, Division_ID)\n" +
@@ -219,7 +220,7 @@ public class Database {
     return customers;
   }
 
-  public static void insertCustomer(Customer customer) throws SQLException {
+  public static int insertCustomer(Customer customer) throws SQLException {
     commit();
     var sql = getConnection().prepareStatement(INSERT_CUST_SQL);
     sql.setString(1, customer.getCustomerName());
@@ -231,6 +232,7 @@ public class Database {
     sql.setInt(7, customer.getDivision().getDivisionId());
     sql.executeUpdate();
     cacheCustomers();
+    return customers.get(customers.size() - 1).getCustomerId();
   }
 
   public static void updateCustomer(Customer customer) throws SQLException {
@@ -298,7 +300,7 @@ public class Database {
     return appointment.orElse(null);
   }
 
-  public static void insertAppointment(Appointment app) throws SQLException {
+  public static int insertAppointment(Appointment app) throws SQLException {
     commit();
     var sql = getConnection().prepareStatement(INSERT_APP_SQL);
 //        (Title, Description, Type, Start, End, Create_Date, Created_By, Last_Update,
@@ -316,6 +318,7 @@ public class Database {
     sql.setInt(11, app.getContact().getContactId());
     sql.executeUpdate();
     cacheAppointments();
+    return appointments.get(appointments.size() - 1).getAppointmentId();
   }
 
   public static void updateAppointment(Appointment appointment) throws SQLException {

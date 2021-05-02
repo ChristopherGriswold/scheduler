@@ -29,73 +29,85 @@
       <children>
         <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
           <children>
-            <ToolBar prefHeight="40.0" prefWidth="200.0">
-              <items>
-                <ToggleButton fx:id="addCustomerBtn" accessibleHelp="Add Contact" accessibleText="Add Contact" mnemonicParsing="false" onAction="#onActionAddCust">
-                  <graphic>
-                    <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                      <image>
-                        <Image url="@../resources/add_contact.png" />
-                      </image>
-                    </ImageView>
-                  </graphic>
-                  <toggleGroup>
-                    <ToggleGroup fx:id="custToggleGroup" />
-                  </toggleGroup>
-                  <tooltip>
-                    <Tooltip text="Add New Customer" />
-                  </tooltip>
-                </ToggleButton>
-                <ToggleButton fx:id="deleteCustomerBtn" disable="true" mnemonicParsing="false" onAction="#onActionDeleteCust" toggleGroup="$custToggleGroup">
-                  <graphic>
-                    <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                      <image>
-                        <Image url="@../resources/remove_contact.png" />
-                      </image>
-                    </ImageView>
-                  </graphic>
-                  <tooltip>
-                    <Tooltip text="Remove Selected Customer" />
-                  </tooltip>
-                </ToggleButton>
-                <ToggleButton fx:id="editCustomerBtn" disable="true" mnemonicParsing="false" onAction="#onActionEditCust" toggleGroup="$custToggleGroup">
-                  <graphic>
-                    <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                      <image>
-                        <Image url="@../resources/edit_contact.png" />
-                      </image>
-                    </ImageView>
-                  </graphic>
-                  <tooltip>
-                    <Tooltip text="Edit Selected Customer" />
-                  </tooltip>
-                </ToggleButton>
-                <Button fx:id="addCustAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionAddCustApp">
-                  <graphic>
-                    <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                      <image>
-                        <Image url="@../resources/add_appointment.png" />
-                      </image>
-                    </ImageView>
-                  </graphic>
-                  <tooltip>
-                    <Tooltip text="Schedule Appointment with Selected Customer" />
-                  </tooltip>
-                </Button>
-                <Button fx:id="custRefreshBtn" mnemonicParsing="false" onAction="#onActionRefresh">
-                  <graphic>
-                    <ImageView fitHeight="150.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                      <image>
-                        <Image url="@../resources/refresh_icon.png" />
-                      </image>
-                    </ImageView>
-                  </graphic>
-                  <tooltip>
-                    <Tooltip text="Refresh" />
-                  </tooltip>
-                </Button>
-              </items>
-            </ToolBar>
+                  <HBox>
+                     <children>
+                  <ToolBar prefHeight="40.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
+                    <items>
+                      <ToggleButton fx:id="addCustomerBtn" accessibleHelp="Add Contact" accessibleText="Add Contact" mnemonicParsing="false" onAction="#onActionAddCust">
+                        <graphic>
+                          <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                              <Image url="@../resources/add_contact.png" />
+                            </image>
+                          </ImageView>
+                        </graphic>
+                        <toggleGroup>
+                          <ToggleGroup fx:id="custToggleGroup" />
+                        </toggleGroup>
+                        <tooltip>
+                          <Tooltip text="Add New Customer" />
+                        </tooltip>
+                      </ToggleButton>
+                      <ToggleButton fx:id="deleteCustomerBtn" disable="true" mnemonicParsing="false" onAction="#onActionDeleteCust" toggleGroup="$custToggleGroup">
+                        <graphic>
+                          <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                              <Image url="@../resources/remove_contact.png" />
+                            </image>
+                          </ImageView>
+                        </graphic>
+                        <tooltip>
+                          <Tooltip text="Remove Selected Customer" />
+                        </tooltip>
+                      </ToggleButton>
+                      <ToggleButton fx:id="editCustomerBtn" disable="true" mnemonicParsing="false" onAction="#onActionEditCust" toggleGroup="$custToggleGroup">
+                        <graphic>
+                          <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                              <Image url="@../resources/edit_contact.png" />
+                            </image>
+                          </ImageView>
+                        </graphic>
+                        <tooltip>
+                          <Tooltip text="Edit Selected Customer" />
+                        </tooltip>
+                      </ToggleButton>
+                      <Button fx:id="addCustAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionAddCustApp">
+                        <graphic>
+                          <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                              <Image url="@../resources/add_appointment.png" />
+                            </image>
+                          </ImageView>
+                        </graphic>
+                        <tooltip>
+                          <Tooltip text="Schedule Appointment with Selected Customer" />
+                        </tooltip>
+                      </Button>
+                    </items>
+                  </ToolBar>
+                        <ToolBar HBox.hgrow="NEVER">
+                           <items>
+                              <HBox>
+                                 <children>
+                            <Button fx:id="custRefreshBtn" mnemonicParsing="false" onAction="#onActionRefresh">
+                              <graphic>
+                                <ImageView fitHeight="150.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                                  <image>
+                                    <Image url="@../resources/refresh_icon.png" />
+                                  </image>
+                                </ImageView>
+                              </graphic>
+                              <tooltip>
+                                <Tooltip text="Refresh" />
+                              </tooltip>
+                            </Button>
+                                 </children>
+                              </HBox>
+                           </items>
+                        </ToolBar>
+                     </children>
+                  </HBox>
             <TitledPane fx:id="custToolDrawer" collapsible="false" expanded="false" focusTraversable="false" pickOnBounds="false">
               <opaqueInsets>
                 <Insets />
