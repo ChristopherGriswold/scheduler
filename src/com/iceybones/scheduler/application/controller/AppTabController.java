@@ -14,10 +14,13 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -36,13 +39,26 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.util.StringConverter;
 
 public class AppTabController implements Initializable {
-
+  private enum Mode {
+    ALL(MainController.getGreenClock(), "Show Month"),
+    MONTH(MainController.getYellowClockImg(), "Show Week"),
+    WEEK(MainController.getRedClock(), "Show All");
+    Image img;
+    String tipText;
+    Mode(Image img, String tipText) {
+      this.img = img;
+      this.tipText = tipText;
+    }
+  }
+  private Mode curMode = Mode.ALL;
   private MainController mainController;
 
   public void setMainController(MainController mainController) {
@@ -687,10 +703,57 @@ public class AppTabController implements Initializable {
   }
 
   @FXML
+  public void onActionAppMode(ActionEvent actionEvent) {
+    switch (curMode) {
+      case ALL:
+        curMode = Mode.MONTH;
+        MainController.getDbService().submit(() -> {
+          try {
+            appTableView.getItems().setAll(Database.getAppointments().stream()
+                .filter((a) -> a.getStart().withZoneSameInstant(ZoneId.systemDefault()).getMonthValue()
+                    == ZonedDateTime.now().getMonthValue()).collect(Collectors.toList()));
+          } catch (SQLException e) {
+            e.printStackTrace();
+          }
+        });
+        break;
+      case MONTH:
+        curMode = Mode.WEEK;
+        MainController.getDbService().submit(() -> {
+          try {
+            int weekNumber = ZonedDateTime.now()
+                .get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear());
+            appTableView.getItems().setAll(Database.getAppointments().stream()
+                .filter((a) -> a.getStart().withZoneSameInstant(ZoneId.systemDefault()).get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear()) == weekNumber).collect(
+                    Collectors.toList()));
+          } catch (SQLException e) {
+            e.printStackTrace();
+          }
+        });
+        break;
+      case WEEK:
+        curMode = Mode.ALL;
+        populateTable();
+        break;
+    }
+    modeImgView.setImage(curMode.img);
+    modeTooltip.setText(curMode.tipText);
+  }
+
+  @FXML
   private Parent parent;
 
   @FXML
   private Tab appTab;
+
+  @FXML
+  private Button modeBtn;
+
+  @FXML
+  private ImageView modeImgView;
+
+  @FXML
+  private Tooltip modeTooltip;
 
   @FXML
   private ToggleButton addAppBtn;

@@ -31,61 +31,89 @@
       <children>
         <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
           <children>
-            <ToolBar fx:id="toolbar" prefHeight="40.0" prefWidth="200.0">
-              <items>
-                <ToggleButton fx:id="addAppBtn" accessibleHelp="Add Contact" accessibleText="Add Contact" mnemonicParsing="false" onAction="#onActionAddApp">
-                  <graphic>
-                    <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                      <image>
-                        <Image url="@../resources/add_appointment.png" />
-                      </image>
-                    </ImageView>
-                  </graphic>
-                  <tooltip>
-                    <Tooltip text="Add New Appointment" />
-                  </tooltip>
-                  <toggleGroup>
-                    <ToggleGroup fx:id="appToggleGroup" />
-                  </toggleGroup>
-                </ToggleButton>
-                <ToggleButton fx:id="deleteAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionDeleteApp" toggleGroup="$appToggleGroup">
-                  <graphic>
-                    <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                      <image>
-                        <Image url="@../resources/remove_appointment.png" />
-                      </image>
-                    </ImageView>
-                  </graphic>
-                  <tooltip>
-                    <Tooltip text="Remove Selected Appointment" />
-                  </tooltip>
-                </ToggleButton>
-                <ToggleButton fx:id="editAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionEditApp" toggleGroup="$appToggleGroup">
-                  <graphic>
-                    <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                      <image>
-                        <Image url="@../resources/edit_appointment.png" />
-                      </image>
-                    </ImageView>
-                  </graphic>
-                  <tooltip>
-                    <Tooltip text="Edit Selected Appointment" />
-                  </tooltip>
-                </ToggleButton>
-                <Button fx:id="appRefreshBtn" mnemonicParsing="false" onAction="#onActionRefresh">
-                  <graphic>
-                    <ImageView fitHeight="150.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                      <image>
-                        <Image url="@../resources/refresh_icon.png" />
-                      </image>
-                    </ImageView>
-                  </graphic>
-                  <tooltip>
-                    <Tooltip text="Refresh" />
-                  </tooltip>
-                </Button>
-              </items>
-            </ToolBar>
+            <HBox>
+              <children>
+                <ToolBar prefHeight="40.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
+                  <items>
+                    <HBox fillHeight="false">
+                      <children>
+                        <ToggleButton fx:id="addAppBtn" accessibleHelp="Add Contact" accessibleText="Add Contact" mnemonicParsing="false" onAction="#onActionAddApp">
+                          <graphic>
+                            <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                              <image>
+                                <Image url="@../resources/add_appointment.png" />
+                              </image>
+                            </ImageView>
+                          </graphic>
+                          <tooltip>
+                            <Tooltip text="Add New Appointment" />
+                          </tooltip>
+                          <toggleGroup>
+                            <ToggleGroup fx:id="appToggleGroup" />
+                          </toggleGroup>
+                        </ToggleButton>
+                        <ToggleButton fx:id="deleteAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionDeleteApp" toggleGroup="$appToggleGroup">
+                          <graphic>
+                            <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                              <image>
+                                <Image url="@../resources/remove_appointment.png" />
+                              </image>
+                            </ImageView>
+                          </graphic>
+                          <tooltip>
+                            <Tooltip text="Remove Selected Appointment" />
+                          </tooltip>
+                        </ToggleButton>
+                        <ToggleButton fx:id="editAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionEditApp" toggleGroup="$appToggleGroup">
+                          <graphic>
+                            <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                              <image>
+                                <Image url="@../resources/edit_appointment.png" />
+                              </image>
+                            </ImageView>
+                          </graphic>
+                          <tooltip>
+                            <Tooltip text="Edit Selected Appointment" />
+                          </tooltip>
+                        </ToggleButton>
+                      </children>
+                    </HBox>
+                  </items>
+                </ToolBar>
+                <ToolBar fx:id="toolbar" HBox.hgrow="NEVER">
+                  <items>
+                    <HBox fillHeight="false">
+                      <children>
+                        <Button fx:id="modeBtn" mnemonicParsing="false" onAction="#onActionAppMode">
+                          <graphic>
+                            <ImageView fx:id="modeImgView"  fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                              <image>
+                                <Image url="@../resources/green_clock.png" />
+                              </image>
+                            </ImageView>
+                          </graphic>
+                          <tooltip>
+                            <Tooltip fx:id="modeTooltip" text="Show Month" />
+                          </tooltip>
+                        </Button>
+                        <Button fx:id="appRefreshBtn" mnemonicParsing="false" onAction="#onActionRefresh">
+                          <graphic>
+                            <ImageView fitHeight="150.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                              <image>
+                                <Image url="@../resources/refresh_icon.png" />
+                              </image>
+                            </ImageView>
+                          </graphic>
+                          <tooltip>
+                            <Tooltip text="Refresh" />
+                          </tooltip>
+                        </Button>
+                      </children>
+                    </HBox>
+                  </items>
+                </ToolBar>
+              </children>
+            </HBox>
             <TitledPane fx:id="appToolDrawer" collapsible="false" expanded="false" focusTraversable="false" pickOnBounds="false">
               <opaqueInsets>
                 <Insets />

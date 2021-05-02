@@ -29,14 +29,16 @@ public class MainController implements Initializable {
       getResourceAsStream("../resources/remove_icon.png")));
   private static final Image successImg = new Image(Objects.requireNonNull(MainController.class.
       getResourceAsStream("../resources/checkmark_icon.png")));
+  private static final Image redClock = new Image(Objects.requireNonNull(MainController.class.
+      getResourceAsStream("../resources/red_clock.png")));
   private static final Image yellowClockImg = new Image(Objects.requireNonNull(MainController.class.
       getResourceAsStream("../resources/yellow_clock.png")));
-  private static final Image blueClockImg = new Image(Objects.requireNonNull(MainController.class.
-      getResourceAsStream("../resources/blue_clock.png")));
+  private static final Image greenClock = new Image(Objects.requireNonNull(MainController.class.
+      getResourceAsStream("../resources/green_clock.png")));
 
   public enum NotificationType {
     ADD(addImg), EDIT(editImg), DELETE(deleteImg), SUCCESS(successImg),
-    ERROR(errorImg), UPCOMING_APP(yellowClockImg), NONE_UPCOMING(blueClockImg);
+    ERROR(errorImg), UPCOMING_APP(yellowClockImg), NONE_UPCOMING(greenClock);
     Image image;
 
     NotificationType(Image image) {
@@ -137,6 +139,12 @@ public class MainController implements Initializable {
   public static Image getSuccessImg() {
     return successImg;
   }
+
+  public static Image getRedClock() { return redClock; }
+
+  public static Image getYellowClockImg() { return yellowClockImg; }
+
+  public static Image getGreenClock() { return greenClock; }
 
   public ProgressIndicator getTableProgress() {
     return tableProgress;
