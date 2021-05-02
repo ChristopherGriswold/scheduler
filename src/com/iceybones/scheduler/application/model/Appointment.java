@@ -1,5 +1,7 @@
 package com.iceybones.scheduler.application.model;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Appointment {
     private int appointmentId;
@@ -149,4 +151,12 @@ public class Appointment {
     public void setContact(Contact contact) {
         this.contact = contact;
     }
+
+    @Override
+    public String toString() {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("h:mma");
+        return appointmentId + " - " + title + " - " + start.withZoneSameInstant(ZoneId.systemDefault()).format(dtf)
+            + " to " + end.withZoneSameInstant(ZoneId.systemDefault()).format(dtf);
+    }
+
 }

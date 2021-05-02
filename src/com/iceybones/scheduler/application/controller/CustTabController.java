@@ -51,6 +51,18 @@ public class CustTabController implements Initializable {
             }
           }
         });
+    countryComboBox.setPromptText("Country");
+    countryComboBox.setButtonCell(new ListCell<>() {
+      @Override
+      protected void updateItem(Country item, boolean empty) {
+        super.updateItem(item, empty);
+        if (empty || item == null) {
+          setText("Country");
+        } else {
+          setText(item.getCountry());
+        }
+      }
+    });
   }
 
   public void populate() {
@@ -92,38 +104,20 @@ public class CustTabController implements Initializable {
   }
 
   private void clearToolDrawer() {
-    custNameField.setText("");
-    custIdField.setText("");
-    custPhoneField.setText("");
-    custAddressField.setText("");
-    custPostalCodeField.setText("");
-    countryComboBox.getSelectionModel().clearSelection();
-    stateComboBox.getSelectionModel().clearSelection();
+    custNameField.setText(null);
+    custIdField.setText(null);
+    custPhoneField.setText(null);
+    custAddressField.setText(null);
+    custPostalCodeField.setText(null);
+    var handle = countryComboBox.getOnAction();
+    countryComboBox.setOnAction(null);
+    countryComboBox.setValue(null);
+    countryComboBox.setOnAction(handle);
+    handle = stateComboBox.getOnAction();
+    stateComboBox.setOnAction(null);
+    stateComboBox.setValue(null);
+    stateComboBox.setOnAction(handle);
     stateComboBox.setDisable(true);
-    countryComboBox.setPromptText("Country");
-    countryComboBox.setButtonCell(new ListCell<>() {
-      @Override
-      protected void updateItem(Country item, boolean empty) {
-        super.updateItem(item, empty);
-        if (empty || item == null) {
-          setText("Country");
-        } else {
-          setText(item.getCountry());
-        }
-      }
-    });
-    stateComboBox.setPromptText("State");
-    stateComboBox.setButtonCell(new ListCell<>() {
-      @Override
-      protected void updateItem(Division item, boolean empty) {
-        super.updateItem(item, empty);
-        if (empty || item == null) {
-          setText("State");
-        } else {
-          setText(item.getDivision());
-        }
-      }
-    });
   }
 
   void resetToolButtons() {
@@ -136,11 +130,12 @@ public class CustTabController implements Initializable {
   }
 
   void setToolDrawerEditable(boolean isEdit) {
-    custNameField.setEditable(isEdit);
-    custPhoneField.setEditable(isEdit);
-    custAddressField.setEditable(isEdit);
-    custPostalCodeField.setEditable(isEdit);
+    custNameField.setDisable(!isEdit);
+    custPhoneField.setDisable(!isEdit);
+    custAddressField.setDisable(!isEdit);
+    custPostalCodeField.setDisable(!isEdit);
     countryComboBox.setDisable(!isEdit);
+    stateComboBox.setDisable(!isEdit);
   }
 
   void populateCountryBox() {
@@ -174,7 +169,7 @@ public class CustTabController implements Initializable {
         if (empty || item == null) {
           setText("State");
         } else {
-          setText(item.toString());
+          setText(item.getDivision());
         }
       }
     });
@@ -192,12 +187,12 @@ public class CustTabController implements Initializable {
       custPostalCodeField.setText(cust.getPostalCode());
       var handler = countryComboBox.getOnAction();
       countryComboBox.setOnAction(null);
-      countryComboBox.getSelectionModel().select(cust.getDivision().getCountry());
+      countryComboBox.setValue(cust.getDivision().getCountry());
       countryComboBox.setOnAction(handler);
       populateStateBox(cust.getDivision().getCountry());
       var handler2 = stateComboBox.getOnAction();
       stateComboBox.setOnAction(null);
-      stateComboBox.getSelectionModel().select(cust.getDivision());
+      stateComboBox.setValue(cust.getDivision());
       stateComboBox.setOnAction(handler2);
 
     }
@@ -275,10 +270,10 @@ public class CustTabController implements Initializable {
 
   void tryActivateConfirmBtn() {
     custConfirmBtn
-        .setDisable(custNameField.getText().equals("") || custPhoneField.getText().equals("") ||
-            custAddressField.getText().equals("") || custPostalCodeField.getText().equals("") ||
-            countryComboBox.getSelectionModel().isEmpty()
-            || stateComboBox.getSelectionModel().isEmpty() &&
+        .setDisable(custNameField.getText() == null || custPhoneField.getText() == null ||
+            custAddressField.getText() == null || custPostalCodeField.getText() == null ||
+            countryComboBox.getSelectionModel() == null
+            || stateComboBox.getSelectionModel() == null &&
             !deleteCustomerBtn.isSelected());
   }
 
@@ -286,7 +281,7 @@ public class CustTabController implements Initializable {
   void onActionConfirm(ActionEvent event) {
     Customer customer = new Customer();
     customer.setCustomerName(custNameField.getText());
-    customer.setCustomerId((custIdField.getText().isEmpty() ? 0
+    customer.setCustomerId((custIdField.getText() == null ? 0
         : Integer.parseInt(custIdField.getText())));
     customer.setPhone(custPhoneField.getText());
     customer.setAddress(custAddressField.getText());
@@ -323,7 +318,7 @@ public class CustTabController implements Initializable {
     if (deleteCustomerBtn.isSelected()) {
       setToolDrawerEditable(false);
       custConfirmBtnImg.setImage(MainController.getDeleteImg());
-      custConfirmBtn.setDisable(false);
+//      custConfirmBtn.setDisable(false);
       openToolDrawer(custTableView.getSelectionModel().getSelectedItem());
     } else {
       setCollapseToolDrawer(true);
@@ -347,8 +342,8 @@ public class CustTabController implements Initializable {
     setCollapseToolDrawer(true);
     resetToolButtons();
     mainController.getTabPane().getSelectionModel().select(0);
-      mainController.getAppTabController().addAppointment(custTableView.getSelectionModel()
-          .getSelectedItem());
+    mainController.getAppTabController().addAppointment(custTableView.getSelectionModel()
+        .getSelectedItem());
     custTableView.getSelectionModel().clearSelection();
   }
 

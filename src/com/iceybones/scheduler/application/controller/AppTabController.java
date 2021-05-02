@@ -1,5 +1,6 @@
 package com.iceybones.scheduler.application.controller;
 
+import com.iceybones.scheduler.application.controller.MainController.NotificationType;
 import com.iceybones.scheduler.application.model.Appointment;
 import com.iceybones.scheduler.application.model.Contact;
 import com.iceybones.scheduler.application.model.Customer;
@@ -14,6 +15,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
 import javafx.application.Platform;
@@ -52,6 +54,7 @@ public class AppTabController implements Initializable {
     populateContactComboBox();
     populateUserComboBox();
     populateCustComboBox();
+    checkForUpcomingApps(15);
   }
 
   @Override
@@ -105,16 +108,99 @@ public class AppTabController implements Initializable {
             }
           }
         });
+    appStartComboBox.setPromptText("Start");
+    appStartComboBox.setButtonCell(new ListCell<>() {
+      @Override
+      protected void updateItem(ZonedDateTime item, boolean empty) {
+        super.updateItem(item, empty);
+        if (empty || item == null) {
+          setText("Start");
+        } else {
+          setText(item.toString());
+        }
+      }
+    });
+    appDurationComboBox.setPromptText("Duration");
+    appDurationComboBox.setButtonCell(new ListCell<>() {
+      @Override
+      protected void updateItem(Integer item, boolean empty) {
+        super.updateItem(item, empty);
+        if (empty || item == null) {
+          setText("Duration");
+        } else {
+          setText(appDurationComboBox.getConverter().toString(item));
+        }
+      }
+    });
+    appCustComboBox.setPromptText("Customer");
+    appCustComboBox.setButtonCell(new ListCell<>() {
+      @Override
+      protected void updateItem(Customer item, boolean empty) {
+        super.updateItem(item, empty);
+        if (empty || item == null) {
+          setText("Customer");
+        } else {
+          setText(item.toString());
+        }
+      }
+    });
+    appContactsComboBox.setPromptText("Contact");
+    appContactsComboBox.setButtonCell(new ListCell<>() {
+      @Override
+      protected void updateItem(Contact item, boolean empty) {
+        super.updateItem(item, empty);
+        if (empty || item == null) {
+          setText("Contact");
+        } else {
+          setText(item.getContactName());
+        }
+      }
+    });
+    appUserComboBox.setPromptText("Users");
+    appUserComboBox.setButtonCell(new ListCell<>() {
+      @Override
+      protected void updateItem(User item, boolean empty) {
+        super.updateItem(item, empty);
+        if (empty || item == null) {
+          setText("Users");
+        } else {
+          setText(item.getUserName());
+        }
+      }
+    });
+  }
+
+  void checkForUpcomingApps(int mins) {
+    MainController.getDbService().submit(() -> {
+      var nearestApp = appTableView.getItems().parallelStream()
+          .filter((a) -> a.getUser().equals(Database.getConnectedUser()))
+          .filter((a) -> !a.getStart().isBefore(ZonedDateTime.now()))
+          .min(Comparator.comparing(a -> a.getStart().toInstant()));
+
+      if (nearestApp.isPresent() &&
+          nearestApp.get().getStart().withZoneSameInstant(ZoneId.systemDefault())
+              .isBefore(ZonedDateTime.now().plusMinutes(mins))) {
+        Platform.runLater(
+            () -> mainController
+                .notify("Upcoming appointment: " + nearestApp.get(), NotificationType.UPCOMING_APP,
+                    false));
+      } else {
+        Platform.runLater(() -> {
+          mainController.notify("No upcoming appointments",
+              NotificationType.UPCOMING_APP, false);
+        });
+      }
+    });
   }
 
   void tryActivateConfirmBtn() {
     appConfirmBtn
-        .setDisable(appTitleField.getText().equals("") || appLocationField.getText().equals("") ||
-            appTypeField.getText().equals("") || appDescriptionField.getText().equals("") ||
-            appDatePicker.getValue() == null || appCustComboBox.getSelectionModel().isEmpty() ||
-            appContactsComboBox.getSelectionModel().isEmpty() || appStartComboBox
-            .getSelectionModel().isEmpty() || appUserComboBox.getSelectionModel().isEmpty() ||
-            appDurationComboBox.getSelectionModel().isEmpty() && !deleteAppBtn.isSelected());
+        .setDisable(appTitleField.getText() == null || appLocationField.getText() == null ||
+            appTypeField.getText() == null || appDescriptionField.getText() == null ||
+            appDatePicker.getValue() == null || appCustComboBox.getValue() == null ||
+            appContactsComboBox.getValue() == null || appStartComboBox.getValue() == null ||
+            appUserComboBox.getValue() == null ||
+            appDurationComboBox.getValue() == null);
   }
 
   private void setupTable() {
@@ -152,68 +238,28 @@ public class AppTabController implements Initializable {
   }
 
   private void clearToolDrawer() {
-    appTitleField.setText("");
-    appIdField.setText("");
-    appLocationField.setText("");
-    appDescriptionField.setText("");
-    appTypeField.setText("");
-    appCustComboBox.getSelectionModel().clearSelection();
-    appDatePicker.setValue(LocalDate.now());
+    appTitleField.setText(null);
+    appIdField.setText(null);
+    appLocationField.setText(null);
+    appDescriptionField.setText(null);
+    appTypeField.setText(null);
+    var handler = appCustComboBox.getOnAction();
+    appCustComboBox.setOnAction(null);
+    appCustComboBox.setValue(null);
+    appCustComboBox.setOnAction(handler);
+    handler = appDurationComboBox.getOnAction();
+    appDurationComboBox.setOnAction(null);
+    appDurationComboBox.setValue(null);
+    appDurationComboBox.setOnAction(handler);
+    handler = appDatePicker.getOnAction();
+    appDatePicker.setOnAction(null);
+    appDatePicker.setOnAction(handler);
+    appContactsComboBox.setValue(null);
+    appUserComboBox.setValue(null);
+    appStartComboBox.setValue(null);
     appDatePicker.setDisable(true);
     appDurationComboBox.setDisable(true);
     appStartComboBox.setDisable(true);
-    appStartComboBox.getSelectionModel().clearSelection();
-    appDurationComboBox.getSelectionModel().clearSelection();
-    appContactsComboBox.getSelectionModel().clearSelection();
-    appStartComboBox.setPromptText("Start");
-    appStartComboBox.setButtonCell(new ListCell<>() {
-      @Override
-      protected void updateItem(ZonedDateTime item, boolean empty) {
-        super.updateItem(item, empty);
-        if (empty || item == null) {
-          setText("Start");
-        } else {
-          setText(appStartComboBox.getConverter().toString());
-        }
-      }
-    });
-    appDurationComboBox.setPromptText("Duration");
-    appDurationComboBox.setButtonCell(new ListCell<>() {
-      @Override
-      protected void updateItem(Integer item, boolean empty) {
-        super.updateItem(item, empty);
-        if (empty || item == null) {
-          setText("Duration");
-        } else {
-          setText(item.toString());
-        }
-      }
-    });
-    appCustComboBox.setPromptText("Customer");
-    appCustComboBox.setButtonCell(new ListCell<>() {
-      @Override
-      protected void updateItem(Customer item, boolean empty) {
-        super.updateItem(item, empty);
-        if (empty || item == null) {
-          setText("Customer");
-        } else {
-          ;
-          setText(appCustComboBox.getConverter().toString(item));
-        }
-      }
-    });
-    appContactsComboBox.setPromptText("Contact");
-    appContactsComboBox.setButtonCell(new ListCell<>() {
-      @Override
-      protected void updateItem(Contact item, boolean empty) {
-        super.updateItem(item, empty);
-        if (empty || item == null) {
-          setText("Contact");
-        } else {
-          setText(item.getContactName());
-        }
-      }
-    });
   }
 
   void resetToolButtons() {
@@ -244,29 +290,10 @@ public class AppTabController implements Initializable {
         List<Customer> customers = Database.getCustomers();
         Platform.runLater(() -> {
           appCustComboBox.getItems().setAll(customers);
-          appCustComboBox.setPromptText("Customer");
-          appCustComboBox.setConverter(new StringConverter<>() {
-            @Override
-            public String toString(Customer customer) {
-              return customer.getCustomerId() + ": " + customer.getCustomerName();
-            }
-
-            @Override
-            public Customer fromString(String s) {
-              return null;
-            }
-          });
-          appCustComboBox.setButtonCell(new ListCell<>() {
-            @Override
-            protected void updateItem(Customer item, boolean empty) {
-              super.updateItem(item, empty);
-              if (empty || item == null) {
-                setText("Customer");
-              } else {
-                setText(appCustComboBox.getConverter().toString(item));
-              }
-            }
-          });
+          var handle = appCustComboBox.getOnAction();
+          appCustComboBox.setOnAction(null);
+          appCustComboBox.setValue(null);
+          appCustComboBox.setOnAction(handle);
         });
       } catch (SQLException e) {
         Platform.runLater(
@@ -305,12 +332,18 @@ public class AppTabController implements Initializable {
   }
 
   private List<ZonedDateTime> getAvailableTimes(Customer customer) {
+    Appointment excludeApp = null;
+    if (editAppBtn.isSelected()) {
+      excludeApp = appTableView.getSelectionModel().getSelectedItem();
+    }
     var utcStartDt = ZonedDateTime
         .of(LocalDateTime.of(appDatePicker.getValue(), LocalTime.of(12, 0)), ZoneId.of("UTC"));
     var utcEndDt = utcStartDt.plusHours(14);
-    int duration = appDurationComboBox.getSelectionModel().getSelectedItem();
+    int duration = appDurationComboBox.getValue();
     List<Appointment> custApps = new ArrayList<>();
-    for (var app : appTableView.getItems()) {
+    List<Appointment> tableApps = new ArrayList<>(appTableView.getItems());
+    tableApps.remove(excludeApp);
+    for (var app : tableApps) {
       if (app.getCustomer().equals(customer) &&
           app.getStart().toLocalDateTime().toLocalDate().equals(appDatePicker.getValue())) {
         custApps.add(app);
@@ -357,7 +390,8 @@ public class AppTabController implements Initializable {
         return null;
       }
     });
-    appStartComboBox.setButtonCell(new ListCell<ZonedDateTime>() {
+    appStartComboBox.setValue(null);
+    appStartComboBox.setButtonCell(new ListCell<>() {
       @Override
       protected void updateItem(ZonedDateTime item, boolean empty) {
         super.updateItem(item, empty);
@@ -371,8 +405,7 @@ public class AppTabController implements Initializable {
   }
 
   private void populateDurationComboBox() {
-    appDurationComboBox.setPromptText("Duration");
-    appDurationComboBox.setConverter(new StringConverter<Integer>() {
+    appDurationComboBox.setConverter(new StringConverter<>() {
       @Override
       public String toString(Integer time) {
         return time.toString() + " min";
@@ -381,17 +414,6 @@ public class AppTabController implements Initializable {
       @Override
       public Integer fromString(String s) {
         return null;
-      }
-    });
-    appDurationComboBox.setButtonCell(new ListCell<>() {
-      @Override
-      protected void updateItem(Integer item, boolean empty) {
-        super.updateItem(item, empty);
-        if (empty || item == null) {
-          setText("Duration");
-        } else {
-          setText(appDurationComboBox.getConverter().toString(item));
-        }
       }
     });
     appDurationComboBox.getItems().addAll(List.of(15, 30, 45, 60, 90, 120));
@@ -403,6 +425,7 @@ public class AppTabController implements Initializable {
       clearToolDrawer();
     } else {
       appTitleField.setText(app.getTitle());
+      appIdField.setText(Integer.toString(app.getAppointmentId()));
       appDescriptionField.setText(app.getDescription());
       appLocationField.setText(app.getLocation());
       appTypeField.setText(app.getTitle());
@@ -416,17 +439,24 @@ public class AppTabController implements Initializable {
           (int) Duration.between(app.getStart().toLocalDateTime(), app.getEnd().toLocalDateTime())
               .toMinutes());
       appDurationComboBox.setOnAction(handler);
-      appStartComboBox.setValue(app.getStart());
       handler = appCustComboBox.getOnAction();
       appCustComboBox.setOnAction(null);
-      appCustComboBox.getSelectionModel().select(app.getCustomer());
+      appCustComboBox.setValue(app.getCustomer());
       appCustComboBox.setOnAction(handler);
       handler = appContactsComboBox.getOnAction();
       appContactsComboBox.setOnAction(null);
-      appContactsComboBox.getSelectionModel().select(app.getContact());
+      appContactsComboBox.setValue(app.getContact());
       appContactsComboBox.setOnAction(handler);
-      appUserComboBox.getSelectionModel().select(app.getUser());
+      handler = appUserComboBox.getOnAction();
+      appUserComboBox.setOnAction(null);
+      appUserComboBox.setValue(app.getUser());
+      appUserComboBox.setOnAction(handler);
+      handler = appStartComboBox.getOnAction();
+      appStartComboBox.setOnAction(null);
       populateStartComboBox();
+      appStartComboBox.setValue(app.getStart());
+      appStartComboBox.getSelectionModel().select(app.getStart());
+      appStartComboBox.setOnAction(handler);
       if (deleteAppBtn.isSelected()) {
         appConfirmBtn.setDisable(false);
       }
@@ -442,8 +472,8 @@ public class AppTabController implements Initializable {
           setCollapseToolDrawer(true);
           resetToolButtons();
           populateTable();
-          mainController.notify("Appointment: " + app.getTitle() +
-              " has been added to the database.", MainController.NotificationType.ADD, true);
+          mainController
+              .notify("Appointment Added: " + app, MainController.NotificationType.ADD, true);
         });
       } catch (SQLException e) {
         Platform
@@ -465,12 +495,12 @@ public class AppTabController implements Initializable {
           setCollapseToolDrawer(true);
           resetToolButtons();
           appTableView.getItems().set(appTableView.getItems().indexOf(original), newApp);
-          mainController.notify("Appointment " + original.getTitle() + " has been updated.",
+          mainController.notify("Appointment Updated: " + newApp,
               MainController.NotificationType.EDIT, true);
         });
       } catch (SQLException e) {
         Platform
-            .runLater(() -> mainController.notify("Failed to update customer. Check connection.",
+            .runLater(() -> mainController.notify("Failed to update appointment. Check connection.",
                 MainController.NotificationType.ERROR, false));
       } finally {
         Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
@@ -488,8 +518,9 @@ public class AppTabController implements Initializable {
           setCollapseToolDrawer(true);
           resetToolButtons();
           populateTable();
-          mainController.notify(appointment.getTitle() +
-              " has been removed from the database.", MainController.NotificationType.DELETE, true);
+          mainController
+              .notify("Appointment Removed: " + appointment, MainController.NotificationType.DELETE,
+                  true);
         });
       } catch (SQLException e) {
         Platform
@@ -511,15 +542,14 @@ public class AppTabController implements Initializable {
     appCustComboBox.getSelectionModel().select(cust);
   }
 
-
   @FXML
   void onActionAddApp(ActionEvent event) {
     appTableView.getSelectionModel().clearSelection();
     editAppBtn.setDisable(true);
     deleteAppBtn.setDisable(true);
     if (addAppBtn.isSelected()) {
-      setToolDrawerEditable(true);
       appConfirmBtnImg.setImage(MainController.getAddImg());
+      setToolDrawerEditable(true);
       openToolDrawer(null);
     } else {
       setCollapseToolDrawer(true);
@@ -546,19 +576,21 @@ public class AppTabController implements Initializable {
       openToolDrawer(appTableView.getSelectionModel().getSelectedItem());
     } else {
       setCollapseToolDrawer(true);
-//            populateAppComboBox();
-      // TODO SOMETHING HERE
     }
   }
 
   @FXML
   void onActionDatePicker(ActionEvent event) {
+    if (appDatePicker.getValue() == null) {
+      return;
+    }
     appDurationComboBox.setDisable(false);
     var handler = appDurationComboBox.getOnAction();
     appDurationComboBox.setOnAction(null);
-    appDurationComboBox.getSelectionModel().clearSelection();
-    appStartComboBox.getSelectionModel().clearSelection();
+    appDurationComboBox.setValue(null);
     appDurationComboBox.setOnAction(handler);
+    appStartComboBox.setValue(null);
+    appStartComboBox.setValue(null);
     appStartComboBox.setDisable(true);
   }
 
@@ -576,16 +608,17 @@ public class AppTabController implements Initializable {
 
   @FXML
   void onActionCustComboBox(ActionEvent event) {
-//    appDatePicker.getEditor().clear();
-    appDurationComboBox.setDisable(true);
-    appStartComboBox.setDisable(true);
     var handler = appDurationComboBox.getOnAction();
     appDurationComboBox.setOnAction(null);
-    appDurationComboBox.getSelectionModel().clearSelection();
-    appStartComboBox.getSelectionModel().clearSelection();
+    appDurationComboBox.setValue(null);
     appDurationComboBox.setOnAction(handler);
     appDatePicker.setDisable(false);
+    handler = appDatePicker.getOnAction();
+    appDatePicker.setOnAction(null);
     appDatePicker.setValue(LocalDate.now());
+    appDatePicker.setOnAction(handler);
+    appStartComboBox.setValue(null);
+    appStartComboBox.setDisable(true);
     appDurationComboBox.setDisable(false);
   }
 
@@ -606,12 +639,9 @@ public class AppTabController implements Initializable {
 
   @FXML
   void onActionConfirm(ActionEvent event) {
-    if(deleteAppBtn.isSelected()) {
-      confirmDeleteApp(appTableView.getSelectionModel().getSelectedItem());
-      return;
-    }
     Appointment app = new Appointment();
     app.setTitle(appTitleField.getText());
+    app.setAppointmentId(appIdField.getText() == null ? 0 : Integer.parseInt(appIdField.getText()));
     app.setType(appTypeField.getText());
     app.setLocation(appLocationField.getText());
     app.setDescription(appDescriptionField.getText());
@@ -624,7 +654,10 @@ public class AppTabController implements Initializable {
     app.setLastUpdatedBy(Database.getConnectedUser());
     if (addAppBtn.isSelected()) {
       confirmAddApp(app);
-    } else if (editAppBtn.isSelected()) {
+    } else if (deleteAppBtn.isSelected()) {
+      confirmDeleteApp(appTableView.getSelectionModel().getSelectedItem());
+    }
+    else if (editAppBtn.isSelected()) {
       confirmUpdateApp(app, appTableView.getSelectionModel().getSelectedItem());
     }
   }
@@ -634,7 +667,6 @@ public class AppTabController implements Initializable {
     mainController.getTableProgress().setVisible(true);
     appTableView.getSelectionModel().clearSelection();
     setCollapseToolDrawer(true);
-    populateTable();
     resetToolButtons();
     MainController.getDbService().submit(() -> {
       try {

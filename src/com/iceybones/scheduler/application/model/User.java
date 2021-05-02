@@ -1,5 +1,7 @@
 package com.iceybones.scheduler.application.model;
 
+import java.util.Objects;
+
 public class User {
     private final String userName;
     private final int userId;
@@ -29,5 +31,22 @@ public class User {
     @Override
     public String toString() {
         return userName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof User)) {
+            return false;
+        }
+        User user = (User) o;
+        return userId == user.userId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userId);
     }
 }

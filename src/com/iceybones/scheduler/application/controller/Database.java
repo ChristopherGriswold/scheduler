@@ -33,9 +33,9 @@ public class Database {
       "Last_Update = CURRENT_TIMESTAMP, Last_Updated_By = ?, Division_ID = ?\n" +
       "WHERE Customer_ID = ?";
   private static final String UPDATE_APP_SQL = "UPDATE appointments\n" +
-      "SET (Title, Description, Location, Type, Start, End, Last_Update, Last_Updated_By, " +
-      "Customer_ID, User_ID, Contact_ID)\n" +
-      "VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)";
+      "SET Title = ?, Description = ?, Location = ?, Type = ?, Start = ?, End = ?, Last_Update = CURRENT_TIMESTAMP, "
+      + "Last_Updated_By = ?, Customer_ID = ?, User_ID = ?, Contact_ID = ?\n"
+      + "WHERE Appointment_ID = ?";
   private static final String DELETE_CUST_APP_SQL = "DELETE FROM appointments WHERE Customer_ID = ?";
   private static final String DELETE_CUST_SQL = "DELETE FROM customers WHERE Customer_ID = ?";
   private static final String DELETE_APP_SQL = "DELETE FROM appointments WHERE Appointment_ID = ?";
@@ -327,12 +327,13 @@ public class Database {
     sql.setString(2, appointment.getDescription());
     sql.setString(3, appointment.getLocation());
     sql.setString(4, appointment.getType());
-    sql.setTimestamp(5, Timestamp.valueOf(appointment.getStart().toLocalDateTime()));
-    sql.setTimestamp(6, Timestamp.valueOf(appointment.getEnd().toLocalDateTime()));
+    sql.setTimestamp(5, Timestamp.from(appointment.getStart().toInstant()));
+    sql.setTimestamp(6, Timestamp.from(appointment.getEnd().toInstant()));
     sql.setString(7, appointment.getLastUpdatedBy().getUserName());
     sql.setInt(8, appointment.getCustomer().getCustomerId());
     sql.setInt(9, appointment.getUser().getUserId());
     sql.setInt(10, appointment.getContact().getContactId());
+    sql.setInt(11, appointment.getAppointmentId());
     sql.executeUpdate();
   }
 

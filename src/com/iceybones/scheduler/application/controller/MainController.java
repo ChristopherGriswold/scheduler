@@ -29,9 +29,14 @@ public class MainController implements Initializable {
       getResourceAsStream("../resources/remove_icon.png")));
   private static final Image successImg = new Image(Objects.requireNonNull(MainController.class.
       getResourceAsStream("../resources/checkmark_icon.png")));
+  private static final Image yellowClockImg = new Image(Objects.requireNonNull(MainController.class.
+      getResourceAsStream("../resources/yellow_clock.png")));
+  private static final Image blueClockImg = new Image(Objects.requireNonNull(MainController.class.
+      getResourceAsStream("../resources/blue_clock.png")));
 
   public enum NotificationType {
-    ADD(addImg), EDIT(editImg), DELETE(deleteImg), SUCCESS(successImg), ERROR(errorImg);
+    ADD(addImg), EDIT(editImg), DELETE(deleteImg), SUCCESS(successImg),
+    ERROR(errorImg), UPCOMING_APP(yellowClockImg), NONE_UPCOMING(blueClockImg);
     Image image;
 
     NotificationType(Image image) {
