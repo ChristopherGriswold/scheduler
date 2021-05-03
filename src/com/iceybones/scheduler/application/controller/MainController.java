@@ -63,8 +63,8 @@ public class MainController implements Initializable {
   public void initialize(URL url, ResourceBundle resourceBundle) {
     Stage stage = ApplicationManager.getStage();
     stage.setResizable(true);
-    stage.setMaximized(true);
-    stage.setFullScreen(true);
+//    stage.setMaximized(true);
+//    stage.setFullScreen(true);
     stage.setTitle("iceybones Scheduler");
     appTabController.setMainController(this);
     custTabController.setMainController(this);

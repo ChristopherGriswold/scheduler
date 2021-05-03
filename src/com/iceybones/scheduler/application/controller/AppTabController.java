@@ -17,15 +17,21 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Parent;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
+import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ComboBoxBase;
@@ -40,25 +46,34 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 public class AppTabController implements Initializable {
+
   private enum Mode {
     ALL(MainController.getGreenClock(), "Show Month"),
     MONTH(MainController.getYellowClockImg(), "Show Week"),
     WEEK(MainController.getRedClock(), "Show All");
     Image img;
     String tipText;
+
     Mode(Image img, String tipText) {
       this.img = img;
       this.tipText = tipText;
     }
   }
+
   private Mode curMode = Mode.ALL;
   private MainController mainController;
 
@@ -71,6 +86,7 @@ public class AppTabController implements Initializable {
     populateContactComboBox();
     populateUserComboBox();
     populateCustComboBox();
+    populateTypeComboBox();
     checkForUpcomingApps(15);
   }
 
@@ -85,7 +101,7 @@ public class AppTabController implements Initializable {
       }
     });
     appStartCol.setCellFactory(column -> new TableCell<>() {
-      final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy hh:mm a");
+      final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a");
 
       @Override
       protected void updateItem(ZonedDateTime item, boolean empty) {
@@ -98,7 +114,7 @@ public class AppTabController implements Initializable {
       }
     });
     appEndCol.setCellFactory(column -> new TableCell<>() {
-      final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy hh:mm a");
+      final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a");
 
       @Override
       protected void updateItem(ZonedDateTime item, boolean empty) {
@@ -213,8 +229,9 @@ public class AppTabController implements Initializable {
   void tryActivateConfirmBtn() {
     appConfirmBtn
         .setDisable(appTitleField.getText() == null || appLocationField.getText() == null ||
-            appTypeField.getText() == null || appDescriptionField.getText() == null ||
-            appDatePicker.getValue() == null || appCustComboBox.getValue() == null ||
+            appDescriptionField.getText() == null || appTypeComboBox.getValue() == null ||
+            appDatePicker.getValue() == null ||
+            (appCustComboBox.getValue() == null || appTypeComboBox.getValue().equals("")) ||
             appContactsComboBox.getValue() == null || appStartComboBox.getValue() == null ||
             appUserComboBox.getValue() == null || appDurationComboBox.getValue() == null);
   }
@@ -249,6 +266,26 @@ public class AppTabController implements Initializable {
     });
   }
 
+  private void populateTypeComboBox() {
+    MainController.getDbService().submit(() -> {
+      List<Appointment> apps = new ArrayList<>();
+      try {
+        apps = Database.getAppointments();
+      } catch (SQLException e) {
+        e.printStackTrace();
+      }
+      Set<String> types = new HashSet<>();
+      for (var app : apps) {
+        types.add(app.getType());
+      }
+      List<Appointment> finalApps = apps;
+      Platform.runLater(() -> {
+        appTypeComboBox.getItems().setAll(types);
+        setupMonthTypeChart(finalApps, types);
+      });
+    });
+  }
+
   public void setCollapseToolDrawer(boolean b) {
     appToolDrawer.setCollapsible(true);
     appToolDrawer.setExpanded(!b);
@@ -260,7 +297,7 @@ public class AppTabController implements Initializable {
     appIdField.setText(null);
     appLocationField.setText(null);
     appDescriptionField.setText(null);
-    appTypeField.setText(null);
+    setValHelper(appTypeComboBox, null);
     setValHelper(appCustComboBox, null);
     setValHelper(appDurationComboBox, null);
     setValHelper(appDatePicker, null);
@@ -293,7 +330,7 @@ public class AppTabController implements Initializable {
     appTitleField.setDisable(!isEdit);
     appLocationField.setDisable(!isEdit);
     appDescriptionField.setDisable(!isEdit);
-    appTypeField.setDisable(!isEdit);
+    appTypeComboBox.setDisable(!isEdit);
     appDatePicker.setDisable(!isEdit);
     appCustComboBox.setDisable(!isEdit);
     appUserComboBox.setDisable(!isEdit);
@@ -450,7 +487,7 @@ public class AppTabController implements Initializable {
       appIdField.setText(Integer.toString(app.getAppointmentId()));
       appDescriptionField.setText(app.getDescription());
       appLocationField.setText(app.getLocation());
-      appTypeField.setText(app.getTitle());
+      setValHelper(appTypeComboBox, app.getType());
       setValHelper(appDatePicker, app.getStart().toLocalDate());
       setValHelper(appDurationComboBox,
           (int) Duration.between(app.getStart().toLocalDateTime(), app.getEnd().toLocalDateTime())
@@ -556,6 +593,14 @@ public class AppTabController implements Initializable {
     if (addAppBtn.isSelected()) {
       appConfirmBtnImg.setImage(MainController.getAddImg());
       setToolDrawerEditable(true);
+
+      if (!toolStackPane.getChildren().contains(appGridPane)) {
+        reportVbox.setVisible(false);
+        toolStackPane.getChildren().remove(reportVbox);
+        storagePane.getChildren().add(reportVbox);
+        toolStackPane.getChildren().add(appGridPane);
+        appGridPane.setVisible(true);
+      }
       openToolDrawer(null);
     } else {
       setCollapseToolDrawer(true);
@@ -567,6 +612,14 @@ public class AppTabController implements Initializable {
     if (deleteAppBtn.isSelected()) {
       setToolDrawerEditable(false);
       appConfirmBtnImg.setImage(MainController.getDeleteImg());
+
+      if (!toolStackPane.getChildren().contains(appGridPane)) {
+        reportVbox.setVisible(false);
+        toolStackPane.getChildren().remove(reportVbox);
+        storagePane.getChildren().add(reportVbox);
+        toolStackPane.getChildren().add(appGridPane);
+        appGridPane.setVisible(true);
+      }
       openToolDrawer(appTableView.getSelectionModel().getSelectedItem());
     } else {
       setCollapseToolDrawer(true);
@@ -579,7 +632,35 @@ public class AppTabController implements Initializable {
       setToolDrawerEditable(true);
       appConfirmBtnImg.setImage(MainController.getEditImg());
       appConfirmBtn.setDisable(true);
+
+      if (!toolStackPane.getChildren().contains(appGridPane)) {
+        reportVbox.setVisible(false);
+        toolStackPane.getChildren().remove(reportVbox);
+        storagePane.getChildren().add(reportVbox);
+        toolStackPane.getChildren().add(appGridPane);
+        appGridPane.setVisible(true);
+      }
+
       openToolDrawer(appTableView.getSelectionModel().getSelectedItem());
+    } else {
+      setCollapseToolDrawer(true);
+    }
+  }
+
+  @FXML
+  void onActionReport() {
+    resetToolButtons();
+    if (reportBtn.isSelected()) {
+      if (!toolStackPane.getChildren().contains(reportVbox)) {
+        appGridPane.setVisible(false);
+        toolStackPane.getChildren().remove(appGridPane);
+        storagePane.getChildren().add(appGridPane);
+        toolStackPane.getChildren().add(reportVbox);
+        reportVbox.setVisible(true);
+      }
+      appTableView.getSelectionModel().clearSelection();
+      populateTypeComboBox();
+      openToolDrawer(null);
     } else {
       setCollapseToolDrawer(true);
     }
@@ -633,6 +714,11 @@ public class AppTabController implements Initializable {
   }
 
   @FXML
+  private void onActionTypeComboBox(ActionEvent actionEvent) {
+    tryActivateConfirmBtn();
+  }
+
+  @FXML
   void onKeyTypedAppField(KeyEvent event) {
     tryActivateConfirmBtn();
   }
@@ -642,7 +728,7 @@ public class AppTabController implements Initializable {
     Appointment app = new Appointment();
     app.setTitle(appTitleField.getText());
     app.setAppointmentId(appIdField.getText() == null ? 0 : Integer.parseInt(appIdField.getText()));
-    app.setType(appTypeField.getText());
+    app.setType(appTypeComboBox.getValue());
     app.setLocation(appLocationField.getText());
     app.setDescription(appDescriptionField.getText());
     app.setStart(appStartComboBox.getValue());
@@ -656,8 +742,7 @@ public class AppTabController implements Initializable {
       confirmAddApp(app);
     } else if (deleteAppBtn.isSelected()) {
       confirmDeleteApp(appTableView.getSelectionModel().getSelectedItem());
-    }
-    else if (editAppBtn.isSelected()) {
+    } else if (editAppBtn.isSelected()) {
       confirmUpdateApp(app, appTableView.getSelectionModel().getSelectedItem());
     }
   }
@@ -711,24 +796,27 @@ public class AppTabController implements Initializable {
         out = new ArrayList<>(list);
         break;
       case MONTH:
-          out = (list.stream()
-              .filter((a) -> a.getStart().withZoneSameInstant(ZoneId.systemDefault()).getMonthValue()
-                  == ZonedDateTime.now().getMonthValue()).collect(Collectors.toList()));
+        out = (list.stream()
+            .filter((a) -> a.getStart().withZoneSameInstant(ZoneId.systemDefault()).getMonthValue()
+                == ZonedDateTime.now().getMonthValue()).collect(Collectors.toList()));
         break;
       case WEEK:
-          int weekNumber = ZonedDateTime.now()
-              .get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear());
-          out = (list.stream()
-              .filter((a) -> a.getStart().withZoneSameInstant(ZoneId.systemDefault())
-                  .get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear())
-                  == weekNumber).collect(Collectors.toList()));
-          break;
+        int weekNumber = ZonedDateTime.now()
+            .get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear());
+        out = (list.stream()
+            .filter((a) -> a.getStart().withZoneSameInstant(ZoneId.systemDefault())
+                .get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear())
+                == weekNumber).collect(Collectors.toList()));
+        break;
     }
     return out;
   }
 
   @FXML
-  private Parent parent;
+  private AnchorPane storagePane;
+
+  @FXML
+  private StackPane toolStackPane;
 
   @FXML
   private Tab appTab;
@@ -750,6 +838,9 @@ public class AppTabController implements Initializable {
 
   @FXML
   private ToggleButton editAppBtn;
+
+  @FXML
+  private ToggleButton reportBtn;
 
   @FXML
   private Button upcomingAppBtn;
@@ -802,8 +893,7 @@ public class AppTabController implements Initializable {
   private TextField appIdField;
 
   @FXML
-  private TextField appTypeField;
-
+  private ComboBox<String> appTypeComboBox;
 
   @FXML
   private TableView<Appointment> appTableView;
@@ -835,4 +925,67 @@ public class AppTabController implements Initializable {
   @FXML
   private TableColumn<Appointment, Integer> appCustIdCol;
 
+  //////////////////
+
+
+  @FXML
+  private ToggleGroup appToggleGroup;
+
+  @FXML
+  private ToolBar toolbar;
+
+  @FXML
+  private GridPane appGridPane;
+
+  @FXML
+  private VBox reportVbox;
+
+  @FXML
+  private LineChart<String, Integer> monthTypeChart;
+
+  @FXML
+  private CategoryAxis monthTypeX;
+
+  @FXML
+  private NumberAxis monthTypeY;
+
+  private void setupMonthTypeChart(List<Appointment> apps, Set<String> types) {
+    monthTypeChart.getData().clear();
+    for (var type : types) {
+      int jan = 0, feb = 0, mar = 0, apr = 0, may = 0, jun = 0, jul = 0, aug = 0, sep = 0, oct = 0, nov = 0, dec = 0;
+      for (var app : apps) {
+        if (app.getType().equals(type)) {
+          switch (app.getStart().withZoneSameInstant(ZoneId.systemDefault()).getMonth()) {
+            case JANUARY: jan++; break;
+            case FEBRUARY: feb++; break;
+            case MARCH: mar++; break;
+            case APRIL: apr++; break;
+            case MAY: may++; break;
+            case JUNE: jun++; break;
+            case JULY: jul++; break;
+            case AUGUST: aug++; break;
+            case SEPTEMBER: sep++; break;
+            case OCTOBER: oct++; break;
+            case NOVEMBER: nov++; break;
+            case DECEMBER: dec++; break;
+          }
+        }
+      }
+      XYChart.Series<String, Integer> series = new Series<>();
+      series.getData().add(new XYChart.Data<>("Jan", jan));
+      series.getData().add(new XYChart.Data<>("Feb", feb));
+      series.getData().add(new XYChart.Data<>("Mar", mar));
+      series.getData().add(new XYChart.Data<>("Apr", apr));
+      series.getData().add(new XYChart.Data<>("May", may));
+      series.getData().add(new XYChart.Data<>("Jun", jun));
+      series.getData().add(new XYChart.Data<>("Jul", jul));
+      series.getData().add(new XYChart.Data<>("Aug", aug));
+      series.getData().add(new XYChart.Data<>("Sep", sep));
+      series.getData().add(new XYChart.Data<>("Oct", oct));
+      series.getData().add(new XYChart.Data<>("Nov", nov));
+      series.getData().add(new XYChart.Data<>("Dec", dec));
+      series.setName(type);
+      monthTypeChart.getData().add(series);
+    }
+  }
 }

@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
@@ -27,7 +32,7 @@
 
 <Tab fx:id="appTab" text="Appointments" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.iceybones.scheduler.application.controller.AppTabController">
   <content>
-    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+    <AnchorPane fx:id="storagePane" minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
       <children>
         <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
           <children>
@@ -35,85 +40,105 @@
               <children>
                 <ToolBar prefHeight="40.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
                   <items>
-                  <ToggleButton fx:id="addAppBtn" accessibleHelp="Add Contact" accessibleText="Add Contact" mnemonicParsing="false" onAction="#onActionAddApp">
-                    <graphic>
-                      <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                        <image>
-                          <Image url="@../resources/add_appointment.png" />
-                        </image>
-                      </ImageView>
-                    </graphic>
-                    <tooltip>
-                      <Tooltip text="Add New Appointment" />
-                    </tooltip>
-                    <toggleGroup>
-                      <ToggleGroup fx:id="appToggleGroup" />
-                    </toggleGroup>
-                  </ToggleButton>
-                  <ToggleButton fx:id="deleteAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionDeleteApp" toggleGroup="$appToggleGroup">
-                    <graphic>
-                      <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                        <image>
-                          <Image url="@../resources/remove_appointment.png" />
-                        </image>
-                      </ImageView>
-                    </graphic>
-                    <tooltip>
-                      <Tooltip text="Remove Selected Appointment" />
-                    </tooltip>
-                  </ToggleButton>
-                  <ToggleButton fx:id="editAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionEditApp" toggleGroup="$appToggleGroup">
-                    <graphic>
-                      <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                        <image>
-                          <Image url="@../resources/edit_appointment.png" />
-                        </image>
-                      </ImageView>
-                    </graphic>
-                    <tooltip>
-                      <Tooltip text="Edit Selected Appointment" />
-                    </tooltip>
-                  </ToggleButton>
+                    <HBox fillHeight="false">
+                      <children>
+                        <ToggleButton fx:id="addAppBtn" accessibleHelp="Add Contact" accessibleText="Add Contact" mnemonicParsing="false" onAction="#onActionAddApp">
+                          <graphic>
+                            <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                              <image>
+                                <Image url="@../resources/add_appointment.png" />
+                              </image>
+                            </ImageView>
+                          </graphic>
+                          <tooltip>
+                            <Tooltip text="Add New Appointment" />
+                          </tooltip>
+                          <toggleGroup>
+                            <ToggleGroup fx:id="appToggleGroup" />
+                          </toggleGroup>
+                        </ToggleButton>
+                        <ToggleButton fx:id="deleteAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionDeleteApp" toggleGroup="$appToggleGroup">
+                          <graphic>
+                            <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                              <image>
+                                <Image url="@../resources/remove_appointment.png" />
+                              </image>
+                            </ImageView>
+                          </graphic>
+                          <tooltip>
+                            <Tooltip text="Remove Selected Appointment" />
+                          </tooltip>
+                        </ToggleButton>
+                        <ToggleButton fx:id="editAppBtn" disable="true" mnemonicParsing="false" onAction="#onActionEditApp" toggleGroup="$appToggleGroup">
+                          <graphic>
+                            <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                              <image>
+                                <Image url="@../resources/edit_appointment.png" />
+                              </image>
+                            </ImageView>
+                          </graphic>
+                          <tooltip>
+                            <Tooltip text="Edit Selected Appointment" />
+                          </tooltip>
+                        </ToggleButton>
+                                    <ToggleButton fx:id="reportBtn" mnemonicParsing="false" onAction="#onActionReport" toggleGroup="$appToggleGroup">
+                                       <graphic>
+                                          <ImageView fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                                             <image>
+                                                <Image url="@../resources/info_icon.png" />
+                                             </image>
+                                          </ImageView>
+                                       </graphic>
+                                       <tooltip>
+                                          <Tooltip text="VIew Reports" />
+                                       </tooltip>
+                                    </ToggleButton>
+                      </children>
+                    </HBox>
                   </items>
                 </ToolBar>
                 <ToolBar fx:id="toolbar" HBox.hgrow="NEVER">
                   <items>
-                  <Button fx:id="modeBtn" mnemonicParsing="false" onAction="#onActionAppMode">
-                    <graphic>
-                      <ImageView fx:id="modeImgView" fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                        <image>
-                          <Image url="@../resources/green_clock.png" />
-                        </image>
-                      </ImageView>
-                    </graphic>
-                    <tooltip>
-                      <Tooltip fx:id="modeTooltip" text="Show Month" />
-                    </tooltip>
-                  </Button>
-                  <Button fx:id="appRefreshBtn" mnemonicParsing="false" onAction="#onActionRefresh">
-                    <graphic>
-                      <ImageView fitHeight="150.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
-                        <image>
-                          <Image url="@../resources/refresh_icon.png" />
-                        </image>
-                      </ImageView>
-                    </graphic>
-                    <tooltip>
-                      <Tooltip text="Refresh" />
-                    </tooltip>
-                  </Button>
+                    <HBox fillHeight="false">
+                      <children>
+                        <Button fx:id="modeBtn" mnemonicParsing="false" onAction="#onActionAppMode">
+                          <graphic>
+                            <ImageView fx:id="modeImgView" fitHeight="32.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                              <image>
+                                <Image url="@../resources/green_clock.png" />
+                              </image>
+                            </ImageView>
+                          </graphic>
+                          <tooltip>
+                            <Tooltip fx:id="modeTooltip" text="Show Month" />
+                          </tooltip>
+                        </Button>
+                        <Button fx:id="appRefreshBtn" mnemonicParsing="false" onAction="#onActionRefresh">
+                          <graphic>
+                            <ImageView fitHeight="150.0" fitWidth="32.0" pickOnBounds="true" preserveRatio="true">
+                              <image>
+                                <Image url="@../resources/refresh_icon.png" />
+                              </image>
+                            </ImageView>
+                          </graphic>
+                          <tooltip>
+                            <Tooltip text="Refresh" />
+                          </tooltip>
+                        </Button>
+                      </children>
+                    </HBox>
                   </items>
                 </ToolBar>
               </children>
             </HBox>
-            <TitledPane fx:id="appToolDrawer" collapsible="false" expanded="false" focusTraversable="false" pickOnBounds="false">
+            <TitledPane fx:id="appToolDrawer" animated="false" collapsible="false" expanded="false" focusTraversable="false" minHeight="0.0" pickOnBounds="false" prefWidth="991.0">
               <opaqueInsets>
                 <Insets />
               </opaqueInsets>
               <content>
-                <StackPane prefHeight="150.0" prefWidth="200.0">
+                <StackPane fx:id="toolStackPane">
                   <children>
-                    <GridPane hgap="16.0" vgap="16.0">
+                    <GridPane fx:id="appGridPane" hgap="16.0" maxHeight="-Infinity" vgap="16.0">
                       <columnConstraints>
                         <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" prefWidth="278.0" />
                         <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" prefWidth="204.0" />
@@ -121,7 +146,7 @@
                       </columnConstraints>
                       <rowConstraints>
                         <RowConstraints valignment="CENTER" vgrow="NEVER" />
-                        <RowConstraints fillHeight="false" valignment="CENTER" />
+                        <RowConstraints fillHeight="false" valignment="CENTER" vgrow="NEVER" />
                         <RowConstraints fillHeight="false" valignment="CENTER" vgrow="NEVER" />
                       </rowConstraints>
                       <children>
@@ -140,16 +165,16 @@
                             <TextField fx:id="appLocationField" onKeyTyped="#onKeyTypedAppField" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>
-                        <HBox alignment="CENTER_LEFT" prefWidth="482.0" spacing="8.0" GridPane.rowIndex="2">
+                        <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.rowIndex="2">
                           <children>
                             <Label minWidth="-Infinity" text="Description:" />
-                            <TextArea fx:id="appDescriptionField" onKeyTyped="#onKeyTypedAppField" style="-fx-opacity: 1;" wrapText="true" />
+                            <TextArea fx:id="appDescriptionField" maxHeight="0.0" onKeyTyped="#onKeyTypedAppField" style="-fx-opacity: 1;" wrapText="true" />
                           </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                           <children>
                             <Label minWidth="-Infinity" text="Type:" />
-                            <TextField fx:id="appTypeField" onKeyTyped="#onKeyTypedAppField" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
+                            <ComboBox fx:id="appTypeComboBox" editable="true" maxWidth="1.7976931348623157E308" onAction="#onActionTypeComboBox" onKeyReleased="#onKeyTypedAppField" promptText="Select or Create New" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="2">
@@ -204,7 +229,7 @@
             </TitledPane>
             <TableView fx:id="appTableView" VBox.vgrow="ALWAYS">
               <columns>
-                <TableColumn fx:id="appIdCol" prefWidth="-1.0" text="ID" />
+                <TableColumn fx:id="appIdCol" prefWidth="75.0" text="Appointment ID" />
                 <TableColumn fx:id="appTitleCol" prefWidth="75.0" text="Title" />
                 <TableColumn fx:id="appDescriptionCol" prefWidth="75.0" text="Description" />
                 <TableColumn fx:id="appLocationCol" prefWidth="75.0" text="Location" />
@@ -220,6 +245,109 @@
             </TableView>
           </children>
         </VBox>
+  <VBox fx:id="reportVbox" minHeight="0.0" prefWidth="969.0" spacing="32.0" visible="false">
+    <children>
+      <HBox prefWidth="200.0">
+        <children>
+          <LineChart fx:id="monthTypeChart" animated="false" title="Appointments by Month/Type" HBox.hgrow="ALWAYS">
+            <xAxis>
+              <CategoryAxis fx:id="monthTypeX" side="BOTTOM" />
+            </xAxis>
+            <yAxis>
+              <NumberAxis fx:id="monthTypeY" minorTickCount="0" minorTickVisible="false" side="LEFT" />
+            </yAxis>
+          </LineChart>
+          <PieChart HBox.hgrow="ALWAYS" />
+        </children>
+      </HBox>
+      <Separator prefWidth="200.0" />
+      <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="16.0">
+        <children>
+          <ComboBox prefWidth="150.0" promptText="Contact" />
+          <DatePicker />
+        </children>
+        <VBox.margin>
+          <Insets />
+        </VBox.margin>
+      </HBox>
+      <VBox>
+        <children>
+          <HBox VBox.vgrow="NEVER">
+            <children>
+              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="8:00 AM" />
+              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="10:00 AM" HBox.hgrow="ALWAYS" />
+              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="12:00 AM" HBox.hgrow="ALWAYS" />
+              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="2:00 PM" HBox.hgrow="ALWAYS" />
+              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="4:00 PM" HBox.hgrow="ALWAYS" />
+              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="6:00 PM" HBox.hgrow="ALWAYS" />
+              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="8:00 PM" HBox.hgrow="ALWAYS" />
+              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="10:00 PM" />
+            </children>
+          </HBox>
+          <HBox disable="true">
+            <children>
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
+            </children>
+          </HBox>
+        </children>
+      </VBox>
+    </children>
+  </VBox>
       </children>
     </AnchorPane>
   </content>
