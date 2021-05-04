@@ -2,6 +2,7 @@ package com.iceybones.scheduler.application.model;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 public class Appointment {
     private int appointmentId;
@@ -159,4 +160,20 @@ public class Appointment {
             + " to " + end.withZoneSameInstant(ZoneId.systemDefault()).format(dtf);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Appointment)) {
+            return false;
+        }
+        Appointment that = (Appointment) o;
+        return appointmentId == that.appointmentId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(appointmentId);
+    }
 }

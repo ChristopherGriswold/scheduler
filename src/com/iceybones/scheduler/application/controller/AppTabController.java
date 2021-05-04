@@ -77,7 +77,8 @@ public class AppTabController implements Initializable {
   private enum Mode {
     ALL(MainController.getGreenClock(), "Show Month"),
     MONTH(MainController.getYellowClockImg(), "Show Week"),
-    WEEK(MainController.getRedClock(), "Show All");
+    WEEK(MainController.getRedClock(), "Show All"),
+    CONTACT(MainController.getBlueClock(), "Show All");
     Image img;
     String tipText;
 
@@ -101,8 +102,6 @@ public class AppTabController implements Initializable {
     populateCustComboBox();
     populateTypeComboBox();
     checkForUpcomingApps(15);
-    setReportTimes();
-    setupPieChart();
   }
 
   private void setReportTimes() {
@@ -167,7 +166,7 @@ public class AppTabController implements Initializable {
             deleteAppBtn.setDisable(false);
             editAppBtn.setDisable(false);
             addAppBtn.setDisable(false);
-            if (oldSelection != null && appToolDrawer.isExpanded()) {
+            if (appToolDrawer.isExpanded()) {
               openToolDrawer(appTableView.getSelectionModel().getSelectedItem());
             }
             if (addAppBtn.isSelected()) {
@@ -233,6 +232,18 @@ public class AppTabController implements Initializable {
           setText("Users");
         } else {
           setText(item.getUserName());
+        }
+      }
+    });
+    reportContactBox.setPromptText("Contact");
+    reportContactBox.setButtonCell(new ListCell<>() {
+      @Override
+      protected void updateItem(Contact item, boolean empty) {
+        super.updateItem(item, empty);
+        if (empty || item == null) {
+          setText("Contact");
+        } else {
+          setText(item.toString());
         }
       }
     });
@@ -326,9 +337,13 @@ public class AppTabController implements Initializable {
   }
 
   public void setCollapseToolDrawer(boolean b) {
+    if (b) {
+      appToolDrawer.setAnimated(true);
+    }
     appToolDrawer.setCollapsible(true);
     appToolDrawer.setExpanded(!b);
     appToolDrawer.setCollapsible(false);
+    appToolDrawer.setAnimated(false);
   }
 
   private void clearToolDrawer() {
@@ -363,6 +378,7 @@ public class AppTabController implements Initializable {
     addAppBtn.setSelected(false);
     editAppBtn.setSelected(false);
     deleteAppBtn.setSelected(false);
+    reportBtn.setSelected(false);
   }
 
   void setToolDrawerEditable(boolean isEdit) {
@@ -529,7 +545,7 @@ public class AppTabController implements Initializable {
       appDescriptionField.setText(app.getDescription());
       appLocationField.setText(app.getLocation());
       setValHelper(appTypeComboBox, app.getType());
-      setValHelper(appDatePicker, app.getStart().toLocalDate());
+      setValHelper(appDatePicker, app.getStart().withZoneSameInstant(ZoneId.systemDefault()).toLocalDate());
       setValHelper(appDurationComboBox,
           (int) Duration.between(app.getStart().toLocalDateTime(), app.getEnd().toLocalDateTime())
               .toMinutes());
@@ -578,7 +594,12 @@ public class AppTabController implements Initializable {
           clearToolDrawer();
           setCollapseToolDrawer(true);
           resetToolButtons();
-          appTableView.getItems().set(appTableView.getItems().indexOf(original), newApp);
+          try {
+            appTableView.getItems().set(appTableView.getItems().indexOf(original), newApp);
+//            appTableView.getItems().setAll(Database.getAppointments());
+          } catch (RuntimeException e) {
+            e.printStackTrace();
+          }
           mainController.notify("Appointment Updated: " + newApp,
               MainController.NotificationType.EDIT, true);
         });
@@ -690,7 +711,14 @@ public class AppTabController implements Initializable {
 
   @FXML
   void onActionReport() {
-    resetToolButtons();
+    setReportTimes();
+    setupPieChart();
+    editAppBtn.setDisable(true);
+    deleteAppBtn.setDisable(true);
+    setValHelper(reportDatePicker, null);
+    reportDatePicker.setDisable(true);
+    setValHelper(reportContactBox, null);
+    appTimeBar.getChildren().clear();
     if (reportBtn.isSelected()) {
       if (!toolStackPane.getChildren().contains(reportVbox)) {
         appGridPane.setVisible(false);
@@ -823,6 +851,7 @@ public class AppTabController implements Initializable {
         curMode = Mode.WEEK;
         break;
       case WEEK:
+      case CONTACT:
         curMode = Mode.ALL;
         break;
     }
@@ -1023,6 +1052,7 @@ public class AppTabController implements Initializable {
   @FXML
   private void onActionReportContactBox(ActionEvent actionEvent) {
     setValHelper(reportDatePicker, null);
+    reportDatePicker.setDisable(false);
     appTimeBar.getChildren().clear();
     setReportDatePicker(reportContactBox.getValue());
   }
@@ -1045,7 +1075,12 @@ public class AppTabController implements Initializable {
     appTimeBar.getChildren().clear();
     ZonedDateTime utcStart = ZonedDateTime
         .of(LocalDateTime.of(reportDatePicker.getValue(), LocalTime.of(12, 0)), ZoneId.of("UTC"));
-    List<Appointment> apps = appTableView.getItems();
+    List<Appointment> apps = new ArrayList<>();
+    try {
+      apps = Database.getAppointments();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
     List<Appointment> conApps = new ArrayList<>();
     for (var app : apps) {
       if (app.getContact().equals(contact) && app.getStart()
@@ -1082,7 +1117,24 @@ public class AppTabController implements Initializable {
       }
       Button button = new Button();
       button.setCursor(Cursor.HAND);
+      int finalI = i;
+      int finalSkip = skip;
+      button.setOnAction((event) -> {
+        appTableView.getItems().clear();
+        for (int k = finalI; k <= finalI + finalSkip; k++) {
+          appTableView.getItems().add(conApps.get(k));
+        }
+        curMode = Mode.CONTACT;
+        modeImgView.setImage(curMode.img);
+        modeTooltip.setText(curMode.tipText);
+      });
+      var toolText = new StringBuilder();
+      for (int k = i; k <= i + finalSkip; k++) {
+        toolText.append(conApps.get(k).toString()).append("\n");
+      }
+      toolText.setLength(toolText.length() - 1);
       button.setStyle("-fx-background-color: #239cc7; -fx-focus-traversable: true");
+      button.setTooltip(new Tooltip(toolText.toString()));
       button.hoverProperty().addListener(((observable, oldValue, show) -> {
         if (show) {
           button.setStyle("-fx-background-color: #40bae6");
@@ -1132,7 +1184,12 @@ public class AppTabController implements Initializable {
   }
 
   private List<LocalDate> getMarkedDays(Contact contact) {
-    List<Appointment> apps = appTableView.getItems();
+    List<Appointment> apps = new ArrayList<>();
+    try {
+      apps = Database.getAppointments();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
     List<LocalDate> dates = new ArrayList<>();
     for (var app : apps) {
       if (app.getContact().equals(contact)) {
@@ -1209,15 +1266,14 @@ public class AppTabController implements Initializable {
   private void setupPieChart() {
     MainController.getDbService().submit(() -> {
       try {
-        System.out.println("Hi");
         List<Appointment> apps = Database.getAppointments();
         List<Contact> contacts = Database.getContacts();
-        Map<Contact, Long> contactMins = contacts.stream().collect(Collectors.toMap(contact -> contact, a -> 0L));
+        Map<Contact, Long> contactMins = contacts.stream()
+            .collect(Collectors.toMap(contact -> contact, a -> 0L));
         for (var app : apps) {
           contactMins.put(app.getContact(), contactMins.get(app.getContact())
               + Duration.between(app.getStart(), app.getEnd()).toMinutes());
         }
-        System.out.println("Ho");
         List<PieChart.Data> list = new ArrayList<>();
         for (var contact : contacts) {
           list.add(new Data(contact.getContactName(), contactMins.get(contact)));

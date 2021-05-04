@@ -99,9 +99,13 @@ public class CustTabController implements Initializable {
   }
 
   void setCollapseToolDrawer(boolean b) {
+    if (b) {
+      custToolDrawer.setAnimated(true);
+    }
     custToolDrawer.setCollapsible(true);
     custToolDrawer.setExpanded(!b);
     custToolDrawer.setCollapsible(false);
+    custToolDrawer.setAnimated(false);
   }
 
   private void clearToolDrawer() {

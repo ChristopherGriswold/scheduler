@@ -338,6 +338,7 @@ public class Database {
     sql.setInt(10, appointment.getContact().getContactId());
     sql.setInt(11, appointment.getAppointmentId());
     sql.executeUpdate();
+    appointments.set(appointments.indexOf(appointment), appointment);
   }
 
   public static void deleteAppointment(Appointment appointment) throws SQLException {

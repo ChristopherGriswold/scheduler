@@ -35,6 +35,8 @@ public class MainController implements Initializable {
       getResourceAsStream("../resources/yellow_clock.png")));
   private static final Image greenClock = new Image(Objects.requireNonNull(MainController.class.
       getResourceAsStream("../resources/green_clock.png")));
+  private static final Image blueClock = new Image(Objects.requireNonNull(MainController.class.
+      getResourceAsStream("../resources/blue_clock.png")));
 
   public enum NotificationType {
     ADD(addImg), EDIT(editImg), DELETE(deleteImg), SUCCESS(successImg),
@@ -145,6 +147,8 @@ public class MainController implements Initializable {
   public static Image getYellowClockImg() { return yellowClockImg; }
 
   public static Image getGreenClock() { return greenClock; }
+
+  public static Image getBlueClock() { return blueClock; }
 
   public ProgressIndicator getTableProgress() {
     return tableProgress;
