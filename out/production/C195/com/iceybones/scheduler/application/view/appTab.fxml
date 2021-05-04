@@ -29,6 +29,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
 <Tab fx:id="appTab" text="Appointments" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.iceybones.scheduler.application.controller.AppTabController">
   <content>
@@ -257,10 +258,15 @@
               <NumberAxis fx:id="monthTypeY" minorTickCount="0" minorTickVisible="false" side="LEFT" />
             </yAxis>
           </LineChart>
-          <PieChart HBox.hgrow="ALWAYS" />
+          <PieChart fx:id="pieChart" animated="false" title="Time Spent in Meetings" HBox.hgrow="ALWAYS" />
         </children>
       </HBox>
       <Separator prefWidth="200.0" />
+                  <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="Daily Contact Schedule">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
       <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="16.0">
         <children>
           <ComboBox fx:id="reportContactBox" onAction="#onActionReportContactBox" prefWidth="150.0" promptText="Contact" />

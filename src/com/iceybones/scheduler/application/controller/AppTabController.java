@@ -20,10 +20,12 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -33,6 +35,8 @@ import javafx.scene.Node;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.PieChart;
+import javafx.scene.chart.PieChart.Data;
 import javafx.scene.chart.XYChart;
 import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.Button;
@@ -98,6 +102,7 @@ public class AppTabController implements Initializable {
     populateTypeComboBox();
     checkForUpcomingApps(15);
     setReportTimes();
+    setupPieChart();
   }
 
   private void setReportTimes() {
@@ -987,6 +992,9 @@ public class AppTabController implements Initializable {
   private LineChart<String, Integer> monthTypeChart;
 
   @FXML
+  private PieChart pieChart;
+
+  @FXML
   private CategoryAxis monthTypeX;
 
   @FXML
@@ -1074,12 +1082,12 @@ public class AppTabController implements Initializable {
       }
       Button button = new Button();
       button.setCursor(Cursor.HAND);
-      button.setStyle("-fx-background-color: #00a6ff; -fx-focus-traversable: true");
+      button.setStyle("-fx-background-color: #239cc7; -fx-focus-traversable: true");
       button.hoverProperty().addListener(((observable, oldValue, show) -> {
         if (show) {
-          button.setStyle("-fx-background-color: #8cd0f5; ");
+          button.setStyle("-fx-background-color: #40bae6");
         } else {
-          button.setStyle("-fx-background-color: #00a6ff; ");
+          button.setStyle("-fx-background-color: #239cc7");
         }
       }));
       button.setMaxWidth(Double.MAX_VALUE);
@@ -1108,12 +1116,12 @@ public class AppTabController implements Initializable {
         super.updateItem(date, empty);
         if (dates.contains(date)) {
           setTooltip(new Tooltip("View Appointments"));
-          setStyle("-fx-background-color: #00a6ff;");
+          setStyle("-fx-background-color: #239cc7; -fx-text-fill: #FFFFFF");
           hoverProperty().addListener(((observable, oldValue, show) -> {
             if (show) {
-              setStyle("-fx-background-color: #8cd0f5");
+              setStyle("-fx-background-color: #40bae6; -fx-text-fill: #FFFFFF");
             } else {
-              setStyle("-fx-background-color: #00a6ff");
+              setStyle("-fx-background-color: #239cc7; -fx-text-fill: #FFFFFF");
             }
           }));
         } else {
@@ -1196,5 +1204,31 @@ public class AppTabController implements Initializable {
       series.setName(type);
       monthTypeChart.getData().add(series);
     }
+  }
+
+  private void setupPieChart() {
+    MainController.getDbService().submit(() -> {
+      try {
+        System.out.println("Hi");
+        List<Appointment> apps = Database.getAppointments();
+        List<Contact> contacts = Database.getContacts();
+        Map<Contact, Long> contactMins = contacts.stream().collect(Collectors.toMap(contact -> contact, a -> 0L));
+        for (var app : apps) {
+          contactMins.put(app.getContact(), contactMins.get(app.getContact())
+              + Duration.between(app.getStart(), app.getEnd()).toMinutes());
+        }
+        System.out.println("Ho");
+        List<PieChart.Data> list = new ArrayList<>();
+        for (var contact : contacts) {
+          list.add(new Data(contact.getContactName(), contactMins.get(contact)));
+        }
+        ObservableList<PieChart.Data> oList = FXCollections.observableArrayList(list);
+        Platform.runLater(() -> pieChart.setData(oList));
+      } catch (SQLException e) {
+        e.printStackTrace();
+      }
+    });
+
+
   }
 }
