@@ -28,12 +28,12 @@ public class ApplicationManager extends Application {
     });
     ApplicationManager.stage = stage;
     //TODO REMOVE BEFORE ALL SAID AND DONE
-    try {
-      Database.login("test", "test");
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    setScene("main");
+//    try {
+//      Database.login("test", "test");
+//    } catch (Exception e) {
+//      e.printStackTrace();
+//    }
+    setScene("login");
     stage.show();
   }
 

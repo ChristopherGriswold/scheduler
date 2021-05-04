@@ -245,7 +245,7 @@
             </TableView>
           </children>
         </VBox>
-  <VBox fx:id="reportVbox" minHeight="0.0" prefWidth="969.0" spacing="32.0" visible="false">
+  <VBox fx:id="reportVbox" minHeight="0.0" prefWidth="969.0" spacing="16.0" visible="false">
     <children>
       <HBox prefWidth="200.0">
         <children>
@@ -263,87 +263,31 @@
       <Separator prefWidth="200.0" />
       <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="16.0">
         <children>
-          <ComboBox prefWidth="150.0" promptText="Contact" />
-          <DatePicker />
+          <ComboBox fx:id="reportContactBox" onAction="#onActionReportContactBox" prefWidth="150.0" promptText="Contact" />
+          <DatePicker fx:id="reportDatePicker" onAction="#onActionReportDatePicker" />
         </children>
         <VBox.margin>
           <Insets />
         </VBox.margin>
       </HBox>
-      <VBox>
+      <VBox spacing="8.0">
         <children>
-          <HBox VBox.vgrow="NEVER">
+          <HBox>
             <children>
-              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="8:00 AM" />
-              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="10:00 AM" HBox.hgrow="ALWAYS" />
-              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="12:00 AM" HBox.hgrow="ALWAYS" />
-              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="2:00 PM" HBox.hgrow="ALWAYS" />
-              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="4:00 PM" HBox.hgrow="ALWAYS" />
-              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="6:00 PM" HBox.hgrow="ALWAYS" />
-              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="8:00 PM" HBox.hgrow="ALWAYS" />
-              <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="10:00 PM" />
+                              <Label fx:id="reportTimeLbl1" maxWidth="1.7976931348623157E308" text="8:00 AM" HBox.hgrow="ALWAYS" />
+              <Label fx:id="reportTimeLbl2" maxWidth="1.7976931348623157E308" text="10:00 AM" HBox.hgrow="ALWAYS" />
+              <Label fx:id="reportTimeLbl3" maxWidth="1.7976931348623157E308" text="12:00 AM" HBox.hgrow="ALWAYS" />
+              <Label fx:id="reportTimeLbl4" alignment="CENTER" maxWidth="1.7976931348623157E308" text="2:00 PM" HBox.hgrow="ALWAYS" />
+              <Label fx:id="reportTimeLbl5" alignment="CENTER" maxWidth="1.7976931348623157E308" text="4:00 PM" HBox.hgrow="ALWAYS" />
+              <Label fx:id="reportTimeLbl6" alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" text="6:00 PM" HBox.hgrow="ALWAYS" />
+              <Label fx:id="reportTimeLbl7" alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" text="8:00 PM" HBox.hgrow="ALWAYS" />
+                              <Label fx:id="reportTimeLbl8" alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" text="10:00 PM" HBox.hgrow="ALWAYS" />
             </children>
           </HBox>
-          <HBox disable="true">
-            <children>
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-              <Button maxWidth="1.7976931348623157E308" minWidth="10.0" mnemonicParsing="false" style="-fx-background-radius: 0;" HBox.hgrow="ALWAYS" />
-            </children>
-          </HBox>
+          <HBox fx:id="appTimeBar" maxWidth="1.7976931348623157E308" minHeight="26.0" prefHeight="26.0" style="-fx-background-color: #e8e8e8;">
+                           <VBox.margin>
+                              <Insets left="32.0" right="32.0" />
+                           </VBox.margin></HBox>
         </children>
       </VBox>
     </children>

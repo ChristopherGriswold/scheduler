@@ -24,9 +24,12 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
@@ -37,6 +40,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.ComboBoxBase;
 import javafx.scene.control.DateCell;
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TableCell;
@@ -55,11 +59,16 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 public class AppTabController implements Initializable {
+
+  private double timeBarWidth = 0;
+  ZonedDateTime utcStartDt = ZonedDateTime
+      .of(LocalDateTime.of(LocalDate.now(), LocalTime.of(12, 0)), ZoneId.of("UTC"));
 
   private enum Mode {
     ALL(MainController.getGreenClock(), "Show Month"),
@@ -88,6 +97,27 @@ public class AppTabController implements Initializable {
     populateCustComboBox();
     populateTypeComboBox();
     checkForUpcomingApps(15);
+    setReportTimes();
+  }
+
+  private void setReportTimes() {
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a");
+    reportTimeLbl1
+        .setText(formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault())));
+    reportTimeLbl2.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(2)));
+    reportTimeLbl3.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(4)));
+    reportTimeLbl4.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(6)));
+    reportTimeLbl5.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(8)));
+    reportTimeLbl6.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(10)));
+    reportTimeLbl7.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(12)));
+    reportTimeLbl8.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(14)));
   }
 
   @Override
@@ -200,6 +230,10 @@ public class AppTabController implements Initializable {
           setText(item.getUserName());
         }
       }
+    });
+    timeBarWidth = appTimeBar.getWidth();
+    appTimeBar.widthProperty().addListener((obs, oldVal, newVal) -> {
+      calculateTimeBar(appTimeBar.getChildren());
     });
   }
 
@@ -365,6 +399,7 @@ public class AppTabController implements Initializable {
       try {
         List<Contact> contacts = Database.getContacts();
         appContactsComboBox.getItems().addAll(contacts);
+        reportContactBox.getItems().addAll(contacts);
       } catch (SQLException e) {
         Platform.runLater(
             () -> mainController.notify("Failed to populate contact box. Check connection.",
@@ -433,6 +468,7 @@ public class AppTabController implements Initializable {
     Customer cust = appCustComboBox.getSelectionModel().getSelectedItem();
     var handler = appStartComboBox.getOnAction();
     appStartComboBox.setOnAction(null);
+    appStartComboBox.setValue(null);
     appStartComboBox.getItems().clear();
     appStartComboBox.getItems().setAll(getAvailableTimes(cust));
     appStartComboBox.setOnAction(handler);
@@ -685,6 +721,7 @@ public class AppTabController implements Initializable {
   void onActionDurationComboBox(ActionEvent event) {
     appStartComboBox.setDisable(false);
     populateStartComboBox();
+    tryActivateConfirmBtn();
   }
 
   @FXML
@@ -941,6 +978,12 @@ public class AppTabController implements Initializable {
   private VBox reportVbox;
 
   @FXML
+  private ComboBox<Contact> reportContactBox;
+
+  @FXML
+  private DatePicker reportDatePicker;
+
+  @FXML
   private LineChart<String, Integer> monthTypeChart;
 
   @FXML
@@ -949,6 +992,148 @@ public class AppTabController implements Initializable {
   @FXML
   private NumberAxis monthTypeY;
 
+  @FXML
+  private HBox appTimeBar;
+
+  @FXML
+  private Label reportTimeLbl1;
+  @FXML
+  private Label reportTimeLbl2;
+  @FXML
+  private Label reportTimeLbl3;
+  @FXML
+  private Label reportTimeLbl4;
+  @FXML
+  private Label reportTimeLbl5;
+  @FXML
+  private Label reportTimeLbl6;
+  @FXML
+  private Label reportTimeLbl7;
+  @FXML
+  private Label reportTimeLbl8;
+
+  @FXML
+  private void onActionReportContactBox(ActionEvent actionEvent) {
+    setValHelper(reportDatePicker, null);
+    appTimeBar.getChildren().clear();
+    setReportDatePicker(reportContactBox.getValue());
+  }
+
+  @FXML
+  private void onActionReportDatePicker(ActionEvent actionEvent) {
+    setTimeBar(reportContactBox.getValue());
+  }
+
+  private void calculateTimeBar(ObservableList<Node> buttons) {
+    double deltaRat = appTimeBar.getWidth() / timeBarWidth;
+    for (var button : buttons) {
+      ((Button) button).setPrefWidth(((Button) button).getPrefWidth() * deltaRat);
+    }
+    timeBarWidth = appTimeBar.getWidth();
+  }
+
+  private void setTimeBar(Contact contact) {
+    timeBarWidth = appTimeBar.getWidth();
+    appTimeBar.getChildren().clear();
+    ZonedDateTime utcStart = ZonedDateTime
+        .of(LocalDateTime.of(reportDatePicker.getValue(), LocalTime.of(12, 0)), ZoneId.of("UTC"));
+    List<Appointment> apps = appTableView.getItems();
+    List<Appointment> conApps = new ArrayList<>();
+    for (var app : apps) {
+      if (app.getContact().equals(contact) && app.getStart()
+          .withZoneSameInstant(ZoneId.systemDefault()).toLocalDate()
+          .isEqual(reportDatePicker.getValue())) {
+        conApps.add(app);
+      }
+    }
+    conApps.sort(Comparator.comparing(Appointment::getStart));
+    double timeSlice = timeBarWidth / 56;
+
+    ZonedDateTime timePointer = utcStart;
+    for (int i = 0; i < conApps.size(); i++) {
+      var start = conApps.get(i).getStart();
+      var end = conApps.get(i).getEnd();
+      if (start.isAfter(timePointer)) {
+        Button freeTime = new Button();
+        freeTime.setMaxWidth(Double.MAX_VALUE);
+        freeTime.setPrefWidth(
+            timeSlice * Duration.between(timePointer, conApps.get(i).getStart()).toMinutes() / 15f);
+        freeTime.setDisable(true);
+        appTimeBar.getChildren().add(freeTime);
+      }
+      Appointment nextApp = conApps.get(i);
+      int skip = 0;
+      for (int j = i + 1; j < conApps.size(); j++) {
+        if (conApps.get(j).getStart().isBefore(end)) {
+          skip++;
+          if (end.isBefore(conApps.get(j).getEnd())) {
+            end = conApps.get(j).getEnd();
+            nextApp = conApps.get(j);
+          }
+        }
+      }
+      Button button = new Button();
+      button.setCursor(Cursor.HAND);
+      button.setStyle("-fx-background-color: #00a6ff; -fx-focus-traversable: true");
+      button.hoverProperty().addListener(((observable, oldValue, show) -> {
+        if (show) {
+          button.setStyle("-fx-background-color: #8cd0f5; ");
+        } else {
+          button.setStyle("-fx-background-color: #00a6ff; ");
+        }
+      }));
+      button.setMaxWidth(Double.MAX_VALUE);
+      button.setPrefWidth(
+          timeSlice * Duration.between(start, end).toMinutes() / 15f);
+      appTimeBar.getChildren().add(button);
+      i += skip;
+      timePointer = nextApp.getEnd();
+    }
+    if (!timePointer.isEqual(utcStart.plusHours(14))) {
+      Button last = new Button();
+      last.setStyle("-fx-background-radius: 0");
+      last.setMaxWidth(Double.MAX_VALUE);
+      last.setPrefWidth(timeSlice * (Duration
+          .between(conApps.get(conApps.size() - 1).getEnd(), utcStart.plusHours(14)).toMinutes())
+          / 15f);
+      last.setDisable(true);
+      appTimeBar.getChildren().add(last);
+    }
+  }
+
+  private void setReportDatePicker(Contact contact) {
+    List<LocalDate> dates = getMarkedDays(contact);
+    reportDatePicker.setDayCellFactory(picker -> new DateCell() {
+      public void updateItem(LocalDate date, boolean empty) {
+        super.updateItem(date, empty);
+        if (dates.contains(date)) {
+          setTooltip(new Tooltip("View Appointments"));
+          setStyle("-fx-background-color: #00a6ff;");
+          hoverProperty().addListener(((observable, oldValue, show) -> {
+            if (show) {
+              setStyle("-fx-background-color: #8cd0f5");
+            } else {
+              setStyle("-fx-background-color: #00a6ff");
+            }
+          }));
+        } else {
+          setDisable(true);
+        }
+      }
+    });
+  }
+
+  private List<LocalDate> getMarkedDays(Contact contact) {
+    List<Appointment> apps = appTableView.getItems();
+    List<LocalDate> dates = new ArrayList<>();
+    for (var app : apps) {
+      if (app.getContact().equals(contact)) {
+        dates.add(app.getStart().withZoneSameInstant(ZoneId.systemDefault()).toLocalDate());
+      }
+    }
+    return dates;
+  }
+
   private void setupMonthTypeChart(List<Appointment> apps, Set<String> types) {
     monthTypeChart.getData().clear();
     for (var type : types) {
@@ -956,18 +1141,42 @@ public class AppTabController implements Initializable {
       for (var app : apps) {
         if (app.getType().equals(type)) {
           switch (app.getStart().withZoneSameInstant(ZoneId.systemDefault()).getMonth()) {
-            case JANUARY: jan++; break;
-            case FEBRUARY: feb++; break;
-            case MARCH: mar++; break;
-            case APRIL: apr++; break;
-            case MAY: may++; break;
-            case JUNE: jun++; break;
-            case JULY: jul++; break;
-            case AUGUST: aug++; break;
-            case SEPTEMBER: sep++; break;
-            case OCTOBER: oct++; break;
-            case NOVEMBER: nov++; break;
-            case DECEMBER: dec++; break;
+            case JANUARY:
+              jan++;
+              break;
+            case FEBRUARY:
+              feb++;
+              break;
+            case MARCH:
+              mar++;
+              break;
+            case APRIL:
+              apr++;
+              break;
+            case MAY:
+              may++;
+              break;
+            case JUNE:
+              jun++;
+              break;
+            case JULY:
+              jul++;
+              break;
+            case AUGUST:
+              aug++;
+              break;
+            case SEPTEMBER:
+              sep++;
+              break;
+            case OCTOBER:
+              oct++;
+              break;
+            case NOVEMBER:
+              nov++;
+              break;
+            case DECEMBER:
+              dec++;
+              break;
           }
         }
       }

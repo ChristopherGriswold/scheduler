@@ -108,7 +108,7 @@
                         </ToolBar>
                      </children>
                   </HBox>
-            <TitledPane fx:id="custToolDrawer" collapsible="false" expanded="false" focusTraversable="false" pickOnBounds="false">
+            <TitledPane fx:id="custToolDrawer" animated="false" collapsible="false" expanded="false" focusTraversable="false" pickOnBounds="false">
               <opaqueInsets>
                 <Insets />
               </opaqueInsets>
