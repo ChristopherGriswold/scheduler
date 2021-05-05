@@ -1,7 +1,15 @@
 package com.iceybones.scheduler.application.controller;
 
-import com.iceybones.scheduler.application.model.*;
-import java.sql.*;
+import com.iceybones.scheduler.application.model.Appointment;
+import com.iceybones.scheduler.application.model.Contact;
+import com.iceybones.scheduler.application.model.Country;
+import com.iceybones.scheduler.application.model.Customer;
+import com.iceybones.scheduler.application.model.Division;
+import com.iceybones.scheduler.application.model.User;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +78,7 @@ public class Database {
   ///////////////////Common Methods//////////////////////////
 
   private static Connection getConnection() throws SQLException {
-    if (!connection.isValid(3)) {
+    if (!connection.isValid(1)) {
       connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
       connection.setAutoCommit(false);
     }
@@ -89,13 +97,14 @@ public class Database {
 
   public static void login(String userName, String password) throws Exception {
     try {
-      var sql = connection.prepareStatement(LOGIN_SQL);
+      var sql = getConnection().prepareStatement(LOGIN_SQL);
       sql.setString(1, userName);
       sql.setString(2, password);
       var rs = sql.executeQuery();
       if (rs.next()) {
         connectedUser = new User(rs.getString(1), rs.getInt(2));
       } else {
+        connection.close();
         throw new Exception("Invalid Login");
       }
     } catch (SQLException e) {
@@ -291,20 +300,9 @@ public class Database {
     return appointments;
   }
 
-  public static Appointment getAppointment(int id) throws SQLException {
-    if (appointments.isEmpty()) {
-      cacheAppointments();
-    }
-    var appointment = appointments.parallelStream().filter(a -> a.getAppointmentId() == id)
-        .findAny();
-    return appointment.orElse(null);
-  }
-
   public static int insertAppointment(Appointment app) throws SQLException {
     commit();
     var sql = getConnection().prepareStatement(INSERT_APP_SQL);
-//        (Title, Description, Type, Start, End, Create_Date, Created_By, Last_Update,
-//        Last_Updated_By, Customer_ID, User_ID, Contact_ID)
     sql.setString(1, app.getTitle());
     sql.setString(2, app.getDescription());
     sql.setString(3, app.getLocation());
@@ -324,8 +322,6 @@ public class Database {
   public static void updateAppointment(Appointment appointment) throws SQLException {
     commit();
     var sql = getConnection().prepareStatement(UPDATE_APP_SQL);
-//            (Title, Description, Location, Type, Start, End, Last_Update, Last_Updated_By,
-//            Customer_ID, User_ID, Contact_ID)
     sql.setString(1, appointment.getTitle());
     sql.setString(2, appointment.getDescription());
     sql.setString(3, appointment.getLocation());

@@ -128,7 +128,7 @@
                       <children>
                         <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
                           <children>
-                            <Label minWidth="-Infinity" text="Name:" />
+                            <Label fx:id="custNameLbl" minWidth="-Infinity" text="Name:" />
                             <TextField fx:id="custNameField" onKeyTyped="#onKeyTypedCustField" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                           <GridPane.margin>
@@ -137,19 +137,19 @@
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.rowIndex="1">
                           <children>
-                            <Label minWidth="-Infinity" text="Address:" />
+                            <Label fx:id="custAddressLbl" minWidth="-Infinity" text="Address:" />
                             <TextField fx:id="custAddressField" onKeyTyped="#onKeyTypedCustField" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                           <children>
-                            <Label minWidth="-Infinity" text="Postal Code:" />
+                            <Label fx:id="custPostalCodeLbl" minWidth="-Infinity" text="Postal Code:" />
                             <TextField fx:id="custPostalCodeField" onKeyTyped="#onKeyTypedCustField" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="2">
                           <children>
-                            <Label minWidth="-Infinity" text="Phone:" />
+                            <Label fx:id="custPhoneLbl" minWidth="-Infinity" text="Phone:" />
                             <TextField fx:id="custPhoneField" onKeyTyped="#onKeyTypedCustField" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>
@@ -176,7 +176,7 @@
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1">
                           <children>
-                            <Label minWidth="-Infinity" text="ID:" />
+                            <Label fx:id="custIdLbl" minWidth="-Infinity" text="ID:" />
                             <TextField fx:id="custIdField" disable="true" editable="false" promptText="Auto-Generated" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>

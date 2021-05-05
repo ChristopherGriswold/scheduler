@@ -1,23 +1,28 @@
 package com.iceybones.scheduler.application.controller;
 
-import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
-import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.stage.Stage;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javafx.application.Platform;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TitledPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.stage.Stage;
 
 public class MainController implements Initializable {
 
   private static ExecutorService notifyService = Executors.newSingleThreadExecutor();
+  private ResourceBundle resourceBundle;
   private static final ExecutorService dbService = Executors.newSingleThreadExecutor();
   private static final Image addImg = new Image(Objects.requireNonNull(MainController.class.
       getResourceAsStream("../resources/add_icon.png")));
@@ -38,6 +43,7 @@ public class MainController implements Initializable {
   private static final Image blueClock = new Image(Objects.requireNonNull(MainController.class.
       getResourceAsStream("../resources/blue_clock.png")));
 
+
   public enum NotificationType {
     ADD(addImg), EDIT(editImg), DELETE(deleteImg), SUCCESS(successImg),
     ERROR(errorImg), UPCOMING_APP(yellowClockImg), NONE_UPCOMING(greenClock);
@@ -48,30 +54,36 @@ public class MainController implements Initializable {
     }
   }
 
-  public static void stopNotifyService() {
-    notifyService.shutdown();
-  }
-
-  public static void stopDbService() {
-    dbService.shutdown();
-  }
-
-  public static void cancelNotify() {
-    notifyService.shutdownNow();
-    notifyService = Executors.newSingleThreadExecutor();
-  }
-
   @Override
-  public void initialize(URL url, ResourceBundle resourceBundle) {
+  public void initialize(URL url, ResourceBundle rb) {
+    resourceBundle = rb;
+    appTab.setText(rb.getString("Appointments"));
+    custTab.setText(rb.getString("Customers"));
+    notificationBar.setText(rb.getString("Notifications"));
     Stage stage = ApplicationManager.getStage();
     stage.setResizable(true);
-//    stage.setMaximized(true);
-//    stage.setFullScreen(true);
+    stage.setMinWidth(512);
+    stage.setMinHeight(384);
+    stage.setWidth(1024);
+    stage.setHeight(768);
     stage.setTitle("iceybones Scheduler");
     appTabController.setMainController(this);
     custTabController.setMainController(this);
     appTabController.populate();
     custTabController.populate();
+  }
+
+  static void stopNotifyService() {
+    notifyService.shutdown();
+  }
+
+  static void stopDbService() {
+    dbService.shutdown();
+  }
+
+  static void cancelNotify() {
+    notifyService.shutdownNow();
+    notifyService = Executors.newSingleThreadExecutor();
   }
 
   public void notify(String message, NotificationType type, Boolean undoable) {
@@ -84,15 +96,63 @@ public class MainController implements Initializable {
       try {
         Thread.sleep(5000);
         Platform.runLater(() -> notificationBar.setExpanded(false));
-      } catch (InterruptedException e) {
+      } catch (InterruptedException ignored) {
 
       }
     });
     notifyService.shutdown();
   }
 
+  void refresh() {
+    undoLink.setVisible(false);
+  }
+
+  static ExecutorService getDbService() {
+    return dbService;
+  }
+
+  static Image getAddImg() {
+    return addImg;
+  }
+
+  static Image getDeleteImg() {
+    return deleteImg;
+  }
+
+  static Image getEditImg() {
+    return editImg;
+  }
+
+  static Image getRedClock() {
+    return redClock;
+  }
+
+  static Image getYellowClockImg() {
+    return yellowClockImg;
+  }
+
+  static Image getGreenClock() {
+    return greenClock;
+  }
+
+  static Image getBlueClock() {
+    return blueClock;
+  }
+
+  ProgressIndicator getTableProgress() {
+    return tableProgress;
+  }
+
+  AppTabController getAppTabController() {
+    return appTabController;
+  }
+
+  TabPane getTabPane() {
+    return tabPane;
+  }
+
   @FXML
-  void onActionUndoLink(ActionEvent event) {
+  private void onActionUndoLink() {
     tableProgress.setVisible(true);
     appTabController.resetToolButtons();
     appTabController.setCollapseToolDrawer(true);
@@ -104,82 +164,26 @@ public class MainController implements Initializable {
         Platform.runLater(() -> {
           custTabController.populateTable();
           appTabController.populateTable();
-          notify("Undo Successful", NotificationType.SUCCESS, false);
+          notify(resourceBundle.getString("Undo Successful"), NotificationType.SUCCESS, false);
         });
       } catch (SQLException e) {
-        notify("Failed to undo. Check connection.", NotificationType.ERROR, false);
+        notify(resourceBundle.getString("Failed to undo. Check connection."), NotificationType.ERROR, false);
       } finally {
         tableProgress.setVisible(false);
       }
     });
   }
 
-  public void refresh() {
-    undoLink.setVisible(false);
-  }
-
-  public static ExecutorService getDbService() {
-    return dbService;
-  }
-
-  public static Image getAddImg() {
-    return addImg;
-  }
-
-  public static Image getDeleteImg() {
-    return deleteImg;
-  }
-
-  public static Image getEditImg() {
-    return editImg;
-  }
-
-  public static Image getErrorImg() {
-    return errorImg;
-  }
-
-  public static Image getSuccessImg() {
-    return successImg;
-  }
-
-  public static Image getRedClock() { return redClock; }
-
-  public static Image getYellowClockImg() { return yellowClockImg; }
-
-  public static Image getGreenClock() { return greenClock; }
-
-  public static Image getBlueClock() { return blueClock; }
-
-  public ProgressIndicator getTableProgress() {
-    return tableProgress;
-  }
-
-  public AppTabController getAppTabController() {
-    return appTabController;
-  }
-
-  public CustTabController getCustTabController() {
-    return custTabController;
-  }
-
   @FXML
+  @SuppressWarnings("unused")
   private AppTabController appTabController;
 
   @FXML
+  @SuppressWarnings("unused")
   private CustTabController custTabController;
 
   @FXML
   private TabPane tabPane;
-
-  public TabPane getTabPane() {
-    return tabPane;
-  }
-
-  @FXML
-  private Tab appTab;
-
-  @FXML
-  private Tab custTab;
 
   @FXML
   private TitledPane notificationBar;
@@ -195,5 +199,11 @@ public class MainController implements Initializable {
 
   @FXML
   private ProgressIndicator tableProgress;
+
+  @FXML
+  private Tab appTab;
+
+  @FXML
+  private Tab custTab;
 
 }

@@ -1,17 +1,21 @@
 package com.iceybones.scheduler.application.controller;
 
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.ResourceBundle;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Objects;
 
 public class ApplicationManager extends Application {
 
   private static Stage stage;
+  private static final ResourceBundle rb = ResourceBundle.
+      getBundle("com.iceybones.scheduler.application.resources.strings", Locale.getDefault());
 
   @Override
   public void start(Stage stage) {
@@ -27,32 +31,26 @@ public class ApplicationManager extends Application {
       }
     });
     ApplicationManager.stage = stage;
-    //TODO REMOVE BEFORE ALL SAID AND DONE
-//    try {
-//      Database.login("test", "test");
-//    } catch (Exception e) {
-//      e.printStackTrace();
-//    }
     setScene("login");
     stage.show();
   }
 
-  public static Stage getStage() {
-    return stage;
-  }
-
-  public static void setScene(String name) {
+  static void setScene(String name) {
     name = "../view/" + name + ".fxml";
     Parent root = null;
     try {
-      root = FXMLLoader.load(Objects.requireNonNull(ApplicationManager.class.getResource(name)));
+      root = FXMLLoader
+          .load(Objects.requireNonNull(ApplicationManager.class.getResource(name)), rb);
     } catch (IOException e) {
       e.printStackTrace();
     }
-    stage.setScene(new Scene(root));
+    stage.setScene(new Scene(Objects.requireNonNull(root)));
     stage.centerOnScreen();
   }
 
+  static Stage getStage() {
+    return stage;
+  }
 
   public static void main(String[] args) {
     launch(args);

@@ -1,6 +1,5 @@
 package com.iceybones.scheduler.application.model;
 
-import java.time.ZonedDateTime;
 import java.util.Objects;
 
 public class Customer implements Comparable<Customer>{
@@ -10,8 +9,6 @@ public class Customer implements Comparable<Customer>{
     private String postalCode;
     private String phone;
     private Division division;
-    private ZonedDateTime createDate;
-    private ZonedDateTime lastUpdate;
     private User createdBy;
     private User lastUpdatedBy;
 
@@ -27,19 +24,6 @@ public class Customer implements Comparable<Customer>{
     public int hashCode() {
         return Objects.hash(customerId);
     }
-
-    //    Table Representation
-//    Customer_ID INT(10) (PK)
-//    Customer_Name VARCHAR(50)
-//    Address VARCHAR(100)
-//    Postal_Code VARCHAR(50)
-//    Phone VARCHAR(50)
-//    Create_Date DATETIME
-//    Created_By VARCHAR(50)
-//    Last_Update TIMESTAMP
-//    Last_Updated_By VARCHAR(50)
-//    Division_ID INT(10) (FK)
-
 
     public int getCustomerId() {
         return customerId;
@@ -77,6 +61,7 @@ public class Customer implements Comparable<Customer>{
         return division;
     }
 
+    @SuppressWarnings("unused")
     public Country getCountry() { return division.getCountry(); }
 
     public void setDivision(Division division) {
@@ -89,28 +74,12 @@ public class Customer implements Comparable<Customer>{
 
     public void setPhone(String phone) { this.phone = phone; }
 
-    public ZonedDateTime getCreateDate() {
-        return createDate;
-    }
-
-    public void setCreateDate(ZonedDateTime createDate) {
-        this.createDate = createDate;
-    }
-
     public User getCreatedBy() {
         return createdBy;
     }
 
     public void setCreatedBy(User createdBy) {
         this.createdBy = createdBy;
-    }
-
-    public ZonedDateTime getLastUpdate() {
-        return lastUpdate;
-    }
-
-    public void setLastUpdate(ZonedDateTime lastUpdate) {
-        this.lastUpdate = lastUpdate;
     }
 
     public User getLastUpdatedBy() {

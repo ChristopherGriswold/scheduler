@@ -21,20 +21,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.PieChart.Data;
 import javafx.scene.chart.XYChart;
@@ -46,7 +44,6 @@ import javafx.scene.control.DateCell;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
-import javafx.scene.control.Tab;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -54,13 +51,10 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -69,63 +63,56 @@ import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 public class AppTabController implements Initializable {
-
+  private Mode curMode = Mode.ALL;
+  private MainController mainController;
   private double timeBarWidth = 0;
-  ZonedDateTime utcStartDt = ZonedDateTime
+  private final ZonedDateTime utcStartDt = ZonedDateTime
       .of(LocalDateTime.of(LocalDate.now(), LocalTime.of(12, 0)), ZoneId.of("UTC"));
+  private ResourceBundle resourceBundle;
 
   private enum Mode {
-    ALL(MainController.getGreenClock(), "Show Month"),
-    MONTH(MainController.getYellowClockImg(), "Show Week"),
-    WEEK(MainController.getRedClock(), "Show All"),
-    CONTACT(MainController.getBlueClock(), "Show All");
+    ALL(MainController.getGreenClock()),
+    MONTH(MainController.getYellowClockImg()),
+    WEEK(MainController.getRedClock()),
+    CONTACT(MainController.getBlueClock());
     Image img;
-    String tipText;
 
-    Mode(Image img, String tipText) {
+    Mode(Image img) {
       this.img = img;
-      this.tipText = tipText;
     }
   }
 
-  private Mode curMode = Mode.ALL;
-  private MainController mainController;
-
-  public void setMainController(MainController mainController) {
-    this.mainController = mainController;
-  }
-
-  public void populate() {
-    populateTable();
-    populateContactComboBox();
-    populateUserComboBox();
-    populateCustComboBox();
-    populateTypeComboBox();
-    checkForUpcomingApps(15);
-  }
-
-  private void setReportTimes() {
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a");
-    reportTimeLbl1
-        .setText(formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault())));
-    reportTimeLbl2.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(2)));
-    reportTimeLbl3.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(4)));
-    reportTimeLbl4.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(6)));
-    reportTimeLbl5.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(8)));
-    reportTimeLbl6.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(10)));
-    reportTimeLbl7.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(12)));
-    reportTimeLbl8.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(14)));
-  }
-
   @Override
-  public void initialize(URL url, ResourceBundle resourceBundle) {
+  public void initialize(URL url, ResourceBundle rb) {
+    resourceBundle = rb;
+    appTableView.getColumns().get(0).setText(rb.getString("ID"));
+    appTableView.getColumns().get(1).setText(rb.getString("Title"));
+    appTableView.getColumns().get(2).setText(rb.getString("Description"));
+    appTableView.getColumns().get(3).setText(rb.getString("Location"));
+    appTableView.getColumns().get(4).setText(rb.getString("Contact"));
+    appTableView.getColumns().get(5).setText(rb.getString("Type"));
+    appTableView.getColumns().get(6).setText(rb.getString("Start"));
+    appTableView.getColumns().get(7).setText(rb.getString("End"));
+    appTableView.getColumns().get(8).setText(rb.getString("Duration"));
+    appTypeComboBox.setPromptText(rb.getString("Select or Create"));
+    appIdField.setPromptText(rb.getString("Auto-Generated"));
+    appIdLbl.setText(rb.getString("ID") + ":");
+    appTitleLbl.setText(rb.getString("Title") + ":");
+    appDescriptionLbl.setText(rb.getString("Description")+  ":");
+    appTypeLbl.setText(rb.getString("Type") + ":");
+    appLocationLbl.setText(rb.getString("Location") + ":");
+    appDateLbl.setText(rb.getString("Date") + ":");
+    addAppBtn.getTooltip().setText(rb.getString("Add New Appointment"));
+    editAppBtn.getTooltip().setText(rb.getString("Edit Selected Appointment"));
+    deleteAppBtn.getTooltip().setText(rb.getString("Remove Selected Appointment"));
+    appRefreshBtn.getTooltip().setText(rb.getString("Refresh"));
+    modeTooltip.setText(rb.getString(curMode.name()));
+    reportBtn.getTooltip().setText(rb.getString("View Reports"));
+    pieChart.setTitle(rb.getString("Time Spent in Meetings"));
+    monthTypeChart.setTitle(rb.getString("Appointments by Type/Month"));
+    contactScheduleLbl.setText(rb.getString("Daily Contact Schedule"));
+    appConfirmBtn.getTooltip().setText(rb.getString("Confirm Submission"));
+
     populateDurationComboBox();
     setupTable();
     appDatePicker.setDayCellFactory(picker -> new DateCell() {
@@ -167,6 +154,9 @@ public class AppTabController implements Initializable {
             editAppBtn.setDisable(false);
             addAppBtn.setDisable(false);
             if (appToolDrawer.isExpanded()) {
+              if (editAppBtn.isSelected()) {
+                appConfirmBtn.setDisable(true);
+              }
               openToolDrawer(appTableView.getSelectionModel().getSelectedItem());
             }
             if (addAppBtn.isSelected()) {
@@ -175,115 +165,99 @@ public class AppTabController implements Initializable {
             }
           }
         });
-    appStartComboBox.setPromptText("Start");
+    String start = rb.getString("Start");
+    appStartComboBox.setPromptText(start);
     appStartComboBox.setButtonCell(new ListCell<>() {
       @Override
       protected void updateItem(ZonedDateTime item, boolean empty) {
         super.updateItem(item, empty);
         if (empty || item == null) {
-          setText("Start");
+          setText(start);
         } else {
           setText(item.toString());
         }
       }
     });
-    appDurationComboBox.setPromptText("Duration");
+    String duration = rb.getString("Duration");
+    appDurationComboBox.setPromptText(duration);
     appDurationComboBox.setButtonCell(new ListCell<>() {
       @Override
       protected void updateItem(Integer item, boolean empty) {
         super.updateItem(item, empty);
         if (empty || item == null) {
-          setText("Duration");
+          setText(duration);
         } else {
           setText(appDurationComboBox.getConverter().toString(item));
         }
       }
     });
-    appCustComboBox.setPromptText("Customer");
+    String customer = rb.getString("Customer");
+    appCustComboBox.setPromptText(customer);
     appCustComboBox.setButtonCell(new ListCell<>() {
       @Override
       protected void updateItem(Customer item, boolean empty) {
         super.updateItem(item, empty);
         if (empty || item == null) {
-          setText("Customer");
+          setText(customer);
         } else {
           setText(item.toString());
         }
       }
     });
-    appContactsComboBox.setPromptText("Contact");
+    String contact = rb.getString("Contact");
+    appContactsComboBox.setPromptText(contact);
     appContactsComboBox.setButtonCell(new ListCell<>() {
       @Override
       protected void updateItem(Contact item, boolean empty) {
         super.updateItem(item, empty);
         if (empty || item == null) {
-          setText("Contact");
+          setText(contact);
         } else {
           setText(item.getContactName());
         }
       }
     });
-    appUserComboBox.setPromptText("Users");
+    String user = rb.getString("User");
+    appUserComboBox.setPromptText(user);
     appUserComboBox.setButtonCell(new ListCell<>() {
       @Override
       protected void updateItem(User item, boolean empty) {
         super.updateItem(item, empty);
         if (empty || item == null) {
-          setText("Users");
+          setText(user);
         } else {
           setText(item.getUserName());
         }
       }
     });
-    reportContactBox.setPromptText("Contact");
+    String contactTxt = rb.getString("Contact");
+    reportContactBox.setPromptText(contactTxt);
     reportContactBox.setButtonCell(new ListCell<>() {
       @Override
       protected void updateItem(Contact item, boolean empty) {
         super.updateItem(item, empty);
         if (empty || item == null) {
-          setText("Contact");
+          setText(contactTxt);
         } else {
           setText(item.toString());
         }
       }
     });
     timeBarWidth = appTimeBar.getWidth();
-    appTimeBar.widthProperty().addListener((obs, oldVal, newVal) -> {
-      calculateTimeBar(appTimeBar.getChildren());
-    });
+    appTimeBar.widthProperty().addListener((obs, oldVal, newVal) -> calculateTimeBar(appTimeBar.getChildren()));
   }
 
-  void checkForUpcomingApps(int mins) {
-    MainController.getDbService().submit(() -> {
-      var nearestApp = appTableView.getItems().parallelStream()
-          .filter((a) -> a.getUser().equals(Database.getConnectedUser()))
-          .filter((a) -> !a.getStart().isBefore(ZonedDateTime.now()))
-          .min(Comparator.comparing(a -> a.getStart().toInstant()));
-
-      if (nearestApp.isPresent() &&
-          nearestApp.get().getStart().withZoneSameInstant(ZoneId.systemDefault())
-              .isBefore(ZonedDateTime.now().plusMinutes(mins))) {
-        Platform.runLater(
-            () -> mainController
-                .notify("Upcoming appointment: " + nearestApp.get(), NotificationType.UPCOMING_APP,
-                    false));
-      } else {
-        Platform.runLater(() -> {
-          mainController.notify("No upcoming appointments",
-              NotificationType.NONE_UPCOMING, false);
-        });
-      }
-    });
+  void setMainController(MainController mainController) {
+    this.mainController = mainController;
   }
 
-  void tryActivateConfirmBtn() {
-    appConfirmBtn
-        .setDisable(appTitleField.getText() == null || appLocationField.getText() == null ||
-            appDescriptionField.getText() == null || appTypeComboBox.getValue() == null ||
-            appDatePicker.getValue() == null ||
-            (appCustComboBox.getValue() == null || appTypeComboBox.getValue().equals("")) ||
-            appContactsComboBox.getValue() == null || appStartComboBox.getValue() == null ||
-            appUserComboBox.getValue() == null || appDurationComboBox.getValue() == null);
+  void populate() {
+    populateTable();
+    populateContactComboBox();
+    populateUserComboBox();
+    populateCustComboBox();
+    populateTypeComboBox();
+    checkForUpcomingApps();
   }
 
   private void setupTable() {
@@ -298,7 +272,7 @@ public class AppTabController implements Initializable {
     appCustIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
   }
 
-  public void populateTable() {
+  void populateTable() {
     mainController.getTableProgress().setVisible(true);
     MainController.getDbService().submit(() -> {
       try {
@@ -308,7 +282,7 @@ public class AppTabController implements Initializable {
           appTableView.getItems().addAll(filterApps(appointments, curMode));
         });
       } catch (SQLException e) {
-        Platform.runLater(() -> mainController.notify("Failed to populate table. Check connection.",
+        Platform.runLater(() -> mainController.notify(resourceBundle.getString("Failed to populate table. Check connection."),
             MainController.NotificationType.ERROR, false));
       } finally {
         Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
@@ -336,7 +310,150 @@ public class AppTabController implements Initializable {
     });
   }
 
-  public void setCollapseToolDrawer(boolean b) {
+  private void populateCustComboBox() {
+    appCustComboBox.getItems().clear();
+    MainController.getDbService().submit(() -> {
+      try {
+        List<Customer> customers = Database.getCustomers();
+        Platform.runLater(() -> {
+          appCustComboBox.getItems().setAll(customers);
+          var handle = appCustComboBox.getOnAction();
+          appCustComboBox.setOnAction(null);
+          appCustComboBox.setValue(null);
+          appCustComboBox.setOnAction(handle);
+        });
+      } catch (SQLException e) {
+        Platform.runLater(
+            () -> mainController.notify(resourceBundle.getString("Failed to populate customer box. Check connection."),
+                MainController.NotificationType.ERROR, false));
+      }
+    });
+  }
+
+  private void populateContactComboBox() {
+    appContactsComboBox.getItems().clear();
+    MainController.getDbService().submit(() -> {
+      try {
+        List<Contact> contacts = Database.getContacts();
+        appContactsComboBox.getItems().addAll(contacts);
+        reportContactBox.getItems().addAll(contacts);
+      } catch (SQLException e) {
+        Platform.runLater(
+            () -> mainController.notify(resourceBundle.getString("Failed to populate contact box. Check connection."),
+                MainController.NotificationType.ERROR, false));
+      }
+    });
+  }
+
+  private void populateUserComboBox() {
+    appUserComboBox.getItems().clear();
+    MainController.getDbService().submit(() -> {
+      try {
+        List<User> users = Database.getUsers();
+        appUserComboBox.getItems().addAll(users);
+      } catch (SQLException e) {
+        Platform
+            .runLater(() -> mainController.notify(resourceBundle.getString("Failed to populate user box. Check connection."),
+                MainController.NotificationType.ERROR, false));
+      }
+    });
+  }
+
+  private void populateStartComboBox() {
+    Customer cust = appCustComboBox.getSelectionModel().getSelectedItem();
+    var handler = appStartComboBox.getOnAction();
+    appStartComboBox.setOnAction(null);
+    appStartComboBox.setValue(null);
+    appStartComboBox.getItems().clear();
+    appStartComboBox.getItems().setAll(getAvailableTimes(cust));
+    appStartComboBox.setOnAction(handler);
+    appStartComboBox.setPromptText(resourceBundle.getString("Start"));
+    appStartComboBox.setConverter(new StringConverter<>() {
+      @Override
+      public String toString(ZonedDateTime time) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a");
+        return time.withZoneSameInstant(ZoneId.systemDefault()).format(formatter);
+      }
+
+      @Override
+      public ZonedDateTime fromString(String s) {
+        return null;
+      }
+    });
+    appStartComboBox.setValue(null);
+    appStartComboBox.setButtonCell(new ListCell<>() {
+      @Override
+      protected void updateItem(ZonedDateTime item, boolean empty) {
+        super.updateItem(item, empty);
+        if (empty || item == null) {
+          setText(resourceBundle.getString("Start"));
+        } else {
+          setText(appStartComboBox.getConverter().toString(item));
+        }
+      }
+    });
+  }
+
+  private void populateDurationComboBox() {
+    appDurationComboBox.setConverter(new StringConverter<>() {
+      @Override
+      public String toString(Integer time) {
+        return time.toString() + " min";
+      }
+
+      @Override
+      public Integer fromString(String s) {
+        return null;
+      }
+    });
+    appDurationComboBox.getItems().addAll(List.of(15, 30, 45, 60, 90, 120));
+  }
+
+  private void setReportTimes() {
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a");
+    reportTimeLbl1
+        .setText(formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault())));
+    reportTimeLbl2.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(2)));
+    reportTimeLbl3.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(4)));
+    reportTimeLbl4.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(6)));
+    reportTimeLbl5.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(8)));
+    reportTimeLbl6.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(10)));
+    reportTimeLbl7.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(12)));
+    reportTimeLbl8.setText(
+        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(14)));
+  }
+
+  private void checkForUpcomingApps() {
+    MainController.getDbService().submit(() -> {
+      try {
+        Optional<Appointment> nearestApp = Database.getAppointments().parallelStream()
+            .filter((a) -> a.getUser().equals(Database.getConnectedUser()))
+            .filter((a) -> !a.getStart().isBefore(ZonedDateTime.now()))
+            .min(Comparator.comparing(a -> a.getStart().toInstant()));
+        if (nearestApp.isPresent() &&
+            nearestApp.get().getStart().withZoneSameInstant(ZoneId.systemDefault())
+                .isBefore(ZonedDateTime.now().plusMinutes(15))) {
+          Platform.runLater(
+              () -> mainController
+                  .notify(resourceBundle.getString("Upcoming Appointment") + ": " + nearestApp.get(), NotificationType.UPCOMING_APP,
+                      false));
+        } else {
+          Platform.runLater(() -> mainController.notify(resourceBundle.getString("No Upcoming Appointments"),
+              NotificationType.NONE_UPCOMING, false));
+        }
+      } catch (SQLException e) {
+        e.printStackTrace();
+      }
+    });
+  }
+
+  void setCollapseToolDrawer(boolean b) {
     if (b) {
       appToolDrawer.setAnimated(true);
     }
@@ -364,7 +481,6 @@ public class AppTabController implements Initializable {
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  @Deprecated
   private void setValHelper(ComboBoxBase box, Object val) {
     var handler = box.getOnAction();
     box.setOnAction(null);
@@ -381,7 +497,7 @@ public class AppTabController implements Initializable {
     reportBtn.setSelected(false);
   }
 
-  void setToolDrawerEditable(boolean isEdit) {
+  private void setToolDrawerEditable(boolean isEdit) {
     appTitleField.setDisable(!isEdit);
     appLocationField.setDisable(!isEdit);
     appDescriptionField.setDisable(!isEdit);
@@ -394,62 +510,11 @@ public class AppTabController implements Initializable {
     appStartComboBox.setDisable(!isEdit);
   }
 
-  void populateCustComboBox() {
-    appCustComboBox.getItems().clear();
-    MainController.getDbService().submit(() -> {
-      try {
-        List<Customer> customers = Database.getCustomers();
-        Platform.runLater(() -> {
-          appCustComboBox.getItems().setAll(customers);
-          var handle = appCustComboBox.getOnAction();
-          appCustComboBox.setOnAction(null);
-          appCustComboBox.setValue(null);
-          appCustComboBox.setOnAction(handle);
-        });
-      } catch (SQLException e) {
-        Platform.runLater(
-            () -> mainController.notify("Failed to populate customer box. Check connection.",
-                MainController.NotificationType.ERROR, false));
-      }
-    });
-  }
-
-  void populateContactComboBox() {
-    appContactsComboBox.getItems().clear();
-    MainController.getDbService().submit(() -> {
-      try {
-        List<Contact> contacts = Database.getContacts();
-        appContactsComboBox.getItems().addAll(contacts);
-        reportContactBox.getItems().addAll(contacts);
-      } catch (SQLException e) {
-        Platform.runLater(
-            () -> mainController.notify("Failed to populate contact box. Check connection.",
-                MainController.NotificationType.ERROR, false));
-      }
-    });
-  }
-
-  private void populateUserComboBox() {
-    appUserComboBox.getItems().clear();
-    MainController.getDbService().submit(() -> {
-      try {
-        List<User> users = Database.getUsers();
-        appUserComboBox.getItems().addAll(users);
-      } catch (SQLException e) {
-        Platform
-            .runLater(() -> mainController.notify("Failed to populate user box. Check connection.",
-                MainController.NotificationType.ERROR, false));
-      }
-    });
-  }
-
   private List<ZonedDateTime> getAvailableTimes(Customer customer) {
     Appointment excludeApp = null;
     if (editAppBtn.isSelected()) {
       excludeApp = appTableView.getSelectionModel().getSelectedItem();
     }
-    var utcStartDt = ZonedDateTime
-        .of(LocalDateTime.of(appDatePicker.getValue(), LocalTime.of(12, 0)), ZoneId.of("UTC"));
     var utcEndDt = utcStartDt.plusHours(14);
     int duration = appDurationComboBox.getValue();
     List<Appointment> custApps = new ArrayList<>();
@@ -474,7 +539,6 @@ public class AppTabController implements Initializable {
       if (time.plusMinutes(duration).isAfter(utcEndDt) || time.isBefore(utcStartDt)) {
         continue;
       }
-      INNER:
       for (var app : custApps) {
         if (app.getStart().isBefore(time.plusMinutes(duration)) && app.getEnd().isAfter(time)) {
           continue OUTER;
@@ -485,57 +549,7 @@ public class AppTabController implements Initializable {
     return outTimes;
   }
 
-  private void populateStartComboBox() {
-    Customer cust = appCustComboBox.getSelectionModel().getSelectedItem();
-    var handler = appStartComboBox.getOnAction();
-    appStartComboBox.setOnAction(null);
-    appStartComboBox.setValue(null);
-    appStartComboBox.getItems().clear();
-    appStartComboBox.getItems().setAll(getAvailableTimes(cust));
-    appStartComboBox.setOnAction(handler);
-    appStartComboBox.setPromptText("Start");
-    appStartComboBox.setConverter(new StringConverter<>() {
-      @Override
-      public String toString(ZonedDateTime time) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a");
-        return time.withZoneSameInstant(ZoneId.systemDefault()).format(formatter);
-      }
-
-      @Override
-      public ZonedDateTime fromString(String s) {
-        return null;
-      }
-    });
-    appStartComboBox.setValue(null);
-    appStartComboBox.setButtonCell(new ListCell<>() {
-      @Override
-      protected void updateItem(ZonedDateTime item, boolean empty) {
-        super.updateItem(item, empty);
-        if (empty || item == null) {
-          setText("Start");
-        } else {
-          setText(appStartComboBox.getConverter().toString(item));
-        }
-      }
-    });
-  }
-
-  private void populateDurationComboBox() {
-    appDurationComboBox.setConverter(new StringConverter<>() {
-      @Override
-      public String toString(Integer time) {
-        return time.toString() + " min";
-      }
-
-      @Override
-      public Integer fromString(String s) {
-        return null;
-      }
-    });
-    appDurationComboBox.getItems().addAll(List.of(15, 30, 45, 60, 90, 120));
-  }
-
-  void openToolDrawer(Appointment app) {
+  private void openToolDrawer(Appointment app) {
     setCollapseToolDrawer(false);
     if (app == null) {
       clearToolDrawer();
@@ -545,7 +559,8 @@ public class AppTabController implements Initializable {
       appDescriptionField.setText(app.getDescription());
       appLocationField.setText(app.getLocation());
       setValHelper(appTypeComboBox, app.getType());
-      setValHelper(appDatePicker, app.getStart().withZoneSameInstant(ZoneId.systemDefault()).toLocalDate());
+      setValHelper(appDatePicker,
+          app.getStart().withZoneSameInstant(ZoneId.systemDefault()).toLocalDate());
       setValHelper(appDurationComboBox,
           (int) Duration.between(app.getStart().toLocalDateTime(), app.getEnd().toLocalDateTime())
               .toMinutes());
@@ -558,306 +573,9 @@ public class AppTabController implements Initializable {
         appConfirmBtn.setDisable(false);
       }
     }
-    tryActivateConfirmBtn();
-  }
-
-
-  private void confirmAddApp(Appointment app) {
-    mainController.getTableProgress().setVisible(true);
-    MainController.getDbService().submit(() -> {
-      try {
-        int appId = Database.insertAppointment(app);
-        app.setAppointmentId(appId);
-        Platform.runLater(() -> {
-          setCollapseToolDrawer(true);
-          resetToolButtons();
-          populateTable();
-          mainController
-              .notify("Appointment Added: " + app, MainController.NotificationType.ADD, true);
-        });
-      } catch (SQLException e) {
-        Platform
-            .runLater(() -> mainController.notify("Failed to add appointment. Check connection.",
-                MainController.NotificationType.ERROR, false));
-      } finally {
-        Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
-      }
-    });
-  }
-
-  private void confirmUpdateApp(Appointment newApp, Appointment original) {
-    mainController.getTableProgress().setVisible(true);
-    MainController.getDbService().submit(() -> {
-      try {
-        Database.updateAppointment(newApp);
-        Platform.runLater(() -> {
-          clearToolDrawer();
-          setCollapseToolDrawer(true);
-          resetToolButtons();
-          try {
-            appTableView.getItems().set(appTableView.getItems().indexOf(original), newApp);
-//            appTableView.getItems().setAll(Database.getAppointments());
-          } catch (RuntimeException e) {
-            e.printStackTrace();
-          }
-          mainController.notify("Appointment Updated: " + newApp,
-              MainController.NotificationType.EDIT, true);
-        });
-      } catch (SQLException e) {
-        Platform
-            .runLater(() -> mainController.notify("Failed to update appointment. Check connection.",
-                MainController.NotificationType.ERROR, false));
-      } finally {
-        Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
-      }
-    });
-  }
-
-  private void confirmDeleteApp(Appointment appointment) {
-    mainController.getTableProgress().setVisible(true);
-    MainController.getDbService().submit(() -> {
-      try {
-        Database.deleteAppointment(appointment);
-        Platform.runLater(() -> {
-          clearToolDrawer();
-          setCollapseToolDrawer(true);
-          resetToolButtons();
-          populateTable();
-          mainController
-              .notify("Appointment Removed: " + appointment, MainController.NotificationType.DELETE,
-                  true);
-        });
-      } catch (SQLException e) {
-        Platform
-            .runLater(() -> mainController.notify("Failed to delete appointment. Check connection.",
-                MainController.NotificationType.ERROR, false));
-      } finally {
-        Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
-      }
-    });
-  }
-
-  public void addAppointment(Customer cust) {
-    appTableView.getSelectionModel().clearSelection();
-    resetToolButtons();
-    addAppBtn.setSelected(true);
-    setToolDrawerEditable(true);
-    appConfirmBtnImg.setImage(MainController.getAddImg());
-    openToolDrawer(null);
-    appCustComboBox.getSelectionModel().select(cust);
-  }
-
-  @FXML
-  void onActionAddApp(ActionEvent event) {
-    appTableView.getSelectionModel().clearSelection();
-    editAppBtn.setDisable(true);
-    deleteAppBtn.setDisable(true);
-    if (addAppBtn.isSelected()) {
-      appConfirmBtnImg.setImage(MainController.getAddImg());
-      setToolDrawerEditable(true);
-
-      if (!toolStackPane.getChildren().contains(appGridPane)) {
-        reportVbox.setVisible(false);
-        toolStackPane.getChildren().remove(reportVbox);
-        storagePane.getChildren().add(reportVbox);
-        toolStackPane.getChildren().add(appGridPane);
-        appGridPane.setVisible(true);
-      }
-      openToolDrawer(null);
-    } else {
-      setCollapseToolDrawer(true);
+    if (!editAppBtn.isSelected()) {
+      tryActivateConfirmBtn();
     }
-  }
-
-  @FXML
-  void onActionDeleteApp(ActionEvent event) {
-    if (deleteAppBtn.isSelected()) {
-      setToolDrawerEditable(false);
-      appConfirmBtnImg.setImage(MainController.getDeleteImg());
-
-      if (!toolStackPane.getChildren().contains(appGridPane)) {
-        reportVbox.setVisible(false);
-        toolStackPane.getChildren().remove(reportVbox);
-        storagePane.getChildren().add(reportVbox);
-        toolStackPane.getChildren().add(appGridPane);
-        appGridPane.setVisible(true);
-      }
-      openToolDrawer(appTableView.getSelectionModel().getSelectedItem());
-    } else {
-      setCollapseToolDrawer(true);
-    }
-  }
-
-  @FXML
-  void onActionEditApp(ActionEvent event) {
-    if (editAppBtn.isSelected()) {
-      setToolDrawerEditable(true);
-      appConfirmBtnImg.setImage(MainController.getEditImg());
-      appConfirmBtn.setDisable(true);
-
-      if (!toolStackPane.getChildren().contains(appGridPane)) {
-        reportVbox.setVisible(false);
-        toolStackPane.getChildren().remove(reportVbox);
-        storagePane.getChildren().add(reportVbox);
-        toolStackPane.getChildren().add(appGridPane);
-        appGridPane.setVisible(true);
-      }
-
-      openToolDrawer(appTableView.getSelectionModel().getSelectedItem());
-    } else {
-      setCollapseToolDrawer(true);
-    }
-  }
-
-  @FXML
-  void onActionReport() {
-    setReportTimes();
-    setupPieChart();
-    editAppBtn.setDisable(true);
-    deleteAppBtn.setDisable(true);
-    setValHelper(reportDatePicker, null);
-    reportDatePicker.setDisable(true);
-    setValHelper(reportContactBox, null);
-    appTimeBar.getChildren().clear();
-    if (reportBtn.isSelected()) {
-      if (!toolStackPane.getChildren().contains(reportVbox)) {
-        appGridPane.setVisible(false);
-        toolStackPane.getChildren().remove(appGridPane);
-        storagePane.getChildren().add(appGridPane);
-        toolStackPane.getChildren().add(reportVbox);
-        reportVbox.setVisible(true);
-      }
-      appTableView.getSelectionModel().clearSelection();
-      populateTypeComboBox();
-      openToolDrawer(null);
-    } else {
-      setCollapseToolDrawer(true);
-    }
-  }
-
-  @FXML
-  void onActionDatePicker(ActionEvent event) {
-    if (appDatePicker.getValue() == null) {
-      return;
-    }
-    appDurationComboBox.setDisable(false);
-    var handler = appDurationComboBox.getOnAction();
-    appDurationComboBox.setOnAction(null);
-    appDurationComboBox.setValue(null);
-    appDurationComboBox.setOnAction(handler);
-    appStartComboBox.setValue(null);
-    appStartComboBox.setValue(null);
-    appStartComboBox.setDisable(true);
-  }
-
-  @FXML
-  void onActionDurationComboBox(ActionEvent event) {
-    appStartComboBox.setDisable(false);
-    populateStartComboBox();
-    tryActivateConfirmBtn();
-  }
-
-  @FXML
-  void onActionStartComboBox(ActionEvent event) {
-    tryActivateConfirmBtn();
-  }
-
-
-  @FXML
-  void onActionCustComboBox(ActionEvent event) {
-    setValHelper(appDurationComboBox, null);
-    appDatePicker.setDisable(false);
-    setValHelper(appDatePicker, LocalDate.now());
-    setValHelper(appStartComboBox, null);
-    appStartComboBox.setDisable(true);
-    appDurationComboBox.setDisable(false);
-  }
-
-  @FXML
-  void onActionContactComboBox(ActionEvent event) {
-    tryActivateConfirmBtn();
-  }
-
-  @FXML
-  void onActionUserComboBox(ActionEvent event) {
-    tryActivateConfirmBtn();
-  }
-
-  @FXML
-  private void onActionTypeComboBox(ActionEvent actionEvent) {
-    tryActivateConfirmBtn();
-  }
-
-  @FXML
-  void onKeyTypedAppField(KeyEvent event) {
-    tryActivateConfirmBtn();
-  }
-
-  @FXML
-  void onActionConfirm(ActionEvent event) {
-    Appointment app = new Appointment();
-    app.setTitle(appTitleField.getText());
-    app.setAppointmentId(appIdField.getText() == null ? 0 : Integer.parseInt(appIdField.getText()));
-    app.setType(appTypeComboBox.getValue());
-    app.setLocation(appLocationField.getText());
-    app.setDescription(appDescriptionField.getText());
-    app.setStart(appStartComboBox.getValue());
-    app.setEnd(appStartComboBox.getValue().plusMinutes(appDurationComboBox.getValue()));
-    app.setCustomer(appCustComboBox.getValue());
-    app.setUser(appUserComboBox.getValue());
-    app.setContact(appContactsComboBox.getValue());
-    app.setCreatedBy(Database.getConnectedUser());
-    app.setLastUpdatedBy(Database.getConnectedUser());
-    if (addAppBtn.isSelected()) {
-      confirmAddApp(app);
-    } else if (deleteAppBtn.isSelected()) {
-      confirmDeleteApp(appTableView.getSelectionModel().getSelectedItem());
-    } else if (editAppBtn.isSelected()) {
-      confirmUpdateApp(app, appTableView.getSelectionModel().getSelectedItem());
-    }
-  }
-
-  @FXML
-  void onActionRefresh(ActionEvent event) {
-    mainController.getTableProgress().setVisible(true);
-    appTableView.getSelectionModel().clearSelection();
-    setCollapseToolDrawer(true);
-    resetToolButtons();
-    MainController.getDbService().submit(() -> {
-      try {
-        Database.commit();
-        Platform.runLater(() -> mainController.notify("Changes have been committed.",
-            MainController.NotificationType.SUCCESS, false)
-        );
-      } catch (SQLException e) {
-        Platform
-            .runLater(() -> mainController.notify("Failed to refresh database. Check connection.",
-                MainController.NotificationType.ERROR, false)
-            );
-      } finally {
-        Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
-      }
-    });
-    mainController.refresh();
-  }
-
-  @FXML
-  public void onActionAppMode(ActionEvent actionEvent) {
-    switch (curMode) {
-      case ALL:
-        curMode = Mode.MONTH;
-        break;
-      case MONTH:
-        curMode = Mode.WEEK;
-        break;
-      case WEEK:
-      case CONTACT:
-        curMode = Mode.ALL;
-        break;
-    }
-    modeImgView.setImage(curMode.img);
-    modeTooltip.setText(curMode.tipText);
-    populateTable();
   }
 
   private List<Appointment> filterApps(List<Appointment> list, Mode mode) {
@@ -881,185 +599,6 @@ public class AppTabController implements Initializable {
         break;
     }
     return out;
-  }
-
-  @FXML
-  private AnchorPane storagePane;
-
-  @FXML
-  private StackPane toolStackPane;
-
-  @FXML
-  private Tab appTab;
-
-  @FXML
-  private Button modeBtn;
-
-  @FXML
-  private ImageView modeImgView;
-
-  @FXML
-  private Tooltip modeTooltip;
-
-  @FXML
-  private ToggleButton addAppBtn;
-
-  @FXML
-  private ToggleButton deleteAppBtn;
-
-  @FXML
-  private ToggleButton editAppBtn;
-
-  @FXML
-  private ToggleButton reportBtn;
-
-  @FXML
-  private Button upcomingAppBtn;
-
-  @FXML
-  private Button appRefreshBtn;
-
-  @FXML
-  private TitledPane appToolDrawer;
-
-  @FXML
-  private TextField appTitleField;
-
-  @FXML
-  private TextArea appDescriptionField;
-
-  @FXML
-  private ComboBox<Customer> appCustComboBox;
-
-  public ComboBox<Customer> getAppCustComboBox() {
-    return appCustComboBox;
-  }
-
-  @FXML
-  private TextField appLocationField;
-
-  @FXML
-  private ComboBox<Contact> appContactsComboBox;
-
-  @FXML
-  private ComboBox<User> appUserComboBox;
-
-  @FXML
-  private Button appConfirmBtn;
-
-  @FXML
-  private ImageView appConfirmBtnImg;
-
-  @FXML
-  private ComboBox<ZonedDateTime> appStartComboBox;
-
-  @FXML
-  private ComboBox<Integer> appDurationComboBox;
-
-  @FXML
-  private DatePicker appDatePicker;
-
-
-  @FXML
-  private TextField appIdField;
-
-  @FXML
-  private ComboBox<String> appTypeComboBox;
-
-  @FXML
-  private TableView<Appointment> appTableView;
-
-  @FXML
-  private TableColumn<Appointment, Integer> appIdCol;
-
-  @FXML
-  private TableColumn<Appointment, String> appTitleCol;
-
-  @FXML
-  private TableColumn<Appointment, String> appDescriptionCol;
-
-  @FXML
-  private TableColumn<Appointment, String> appLocationCol;
-
-  @FXML
-  private TableColumn<Appointment, String> appContactCol;
-
-  @FXML
-  private TableColumn<Appointment, String> appTypeCol;
-
-  @FXML
-  private TableColumn<Appointment, ZonedDateTime> appStartCol;
-
-  @FXML
-  private TableColumn<Appointment, ZonedDateTime> appEndCol;
-
-  @FXML
-  private TableColumn<Appointment, Integer> appCustIdCol;
-
-  //////////////////
-
-
-  @FXML
-  private ToggleGroup appToggleGroup;
-
-  @FXML
-  private ToolBar toolbar;
-
-  @FXML
-  private GridPane appGridPane;
-
-  @FXML
-  private VBox reportVbox;
-
-  @FXML
-  private ComboBox<Contact> reportContactBox;
-
-  @FXML
-  private DatePicker reportDatePicker;
-
-  @FXML
-  private LineChart<String, Integer> monthTypeChart;
-
-  @FXML
-  private PieChart pieChart;
-
-  @FXML
-  private CategoryAxis monthTypeX;
-
-  @FXML
-  private NumberAxis monthTypeY;
-
-  @FXML
-  private HBox appTimeBar;
-
-  @FXML
-  private Label reportTimeLbl1;
-  @FXML
-  private Label reportTimeLbl2;
-  @FXML
-  private Label reportTimeLbl3;
-  @FXML
-  private Label reportTimeLbl4;
-  @FXML
-  private Label reportTimeLbl5;
-  @FXML
-  private Label reportTimeLbl6;
-  @FXML
-  private Label reportTimeLbl7;
-  @FXML
-  private Label reportTimeLbl8;
-
-  @FXML
-  private void onActionReportContactBox(ActionEvent actionEvent) {
-    setValHelper(reportDatePicker, null);
-    reportDatePicker.setDisable(false);
-    appTimeBar.getChildren().clear();
-    setReportDatePicker(reportContactBox.getValue());
-  }
-
-  @FXML
-  private void onActionReportDatePicker(ActionEvent actionEvent) {
-    setTimeBar(reportContactBox.getValue());
   }
 
   private void calculateTimeBar(ObservableList<Node> buttons) {
@@ -1126,7 +665,7 @@ public class AppTabController implements Initializable {
         }
         curMode = Mode.CONTACT;
         modeImgView.setImage(curMode.img);
-        modeTooltip.setText(curMode.tipText);
+        modeTooltip.setText(resourceBundle.getString(curMode.name()));
       });
       var toolText = new StringBuilder();
       for (int k = i; k <= i + finalSkip; k++) {
@@ -1284,7 +823,481 @@ public class AppTabController implements Initializable {
         e.printStackTrace();
       }
     });
-
-
   }
+
+  void pushAppointment(Customer cust) {
+    appTableView.getSelectionModel().clearSelection();
+    resetToolButtons();
+    addAppBtn.setSelected(true);
+    setToolDrawerEditable(true);
+    appConfirmBtnImg.setImage(MainController.getAddImg());
+    openToolDrawer(null);
+    appCustComboBox.getSelectionModel().select(cust);
+  }
+
+  private void confirmAddApp(Appointment app) {
+    mainController.getTableProgress().setVisible(true);
+    MainController.getDbService().submit(() -> {
+      try {
+        int appId = Database.insertAppointment(app);
+        app.setAppointmentId(appId);
+        Platform.runLater(() -> {
+          setCollapseToolDrawer(true);
+          resetToolButtons();
+          populateTable();
+          mainController
+              .notify(resourceBundle.getString("Appointment Added") + ": " + app, MainController.NotificationType.ADD, true);
+        });
+      } catch (SQLException e) {
+        Platform
+            .runLater(() -> mainController.notify(resourceBundle.getString("Failed to add appointment. Check connection."),
+                MainController.NotificationType.ERROR, false));
+      } finally {
+        Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
+      }
+    });
+  }
+
+  private void confirmUpdateApp(Appointment newApp, Appointment original) {
+    mainController.getTableProgress().setVisible(true);
+    MainController.getDbService().submit(() -> {
+      try {
+        Database.updateAppointment(newApp);
+        Platform.runLater(() -> {
+          clearToolDrawer();
+          setCollapseToolDrawer(true);
+          resetToolButtons();
+          try {
+            appTableView.getItems().set(appTableView.getItems().indexOf(original), newApp);
+          } catch (RuntimeException e) {
+            e.printStackTrace();
+          }
+          mainController.notify(resourceBundle.getString("Appointment Updated") + ": " + newApp,
+              MainController.NotificationType.EDIT, true);
+        });
+      } catch (SQLException e) {
+        Platform
+            .runLater(() -> mainController.notify(resourceBundle.getString("Failed to update appointment. Check connection."),
+                MainController.NotificationType.ERROR, false));
+      } finally {
+        Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
+      }
+    });
+  }
+
+  private void confirmDeleteApp(Appointment appointment) {
+    mainController.getTableProgress().setVisible(true);
+    MainController.getDbService().submit(() -> {
+      try {
+        Database.deleteAppointment(appointment);
+        Platform.runLater(() -> {
+          clearToolDrawer();
+          setCollapseToolDrawer(true);
+          resetToolButtons();
+          populateTable();
+          mainController
+              .notify(resourceBundle.getString("Appointment Removed") + ": " + appointment, MainController.NotificationType.DELETE,
+                  true);
+        });
+      } catch (SQLException e) {
+        Platform
+            .runLater(() -> mainController.notify(resourceBundle.getString("Failed to delete appointment. Check connection."),
+                MainController.NotificationType.ERROR, false));
+      } finally {
+        Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
+      }
+    });
+  }
+
+  private void tryActivateConfirmBtn() {
+    appConfirmBtn
+        .setDisable(appTitleField.getText() == null || appLocationField.getText() == null ||
+            appDescriptionField.getText() == null || appTypeComboBox.getValue() == null ||
+            appDatePicker.getValue() == null ||
+            (appCustComboBox.getValue() == null || appTypeComboBox.getValue().equals("")) ||
+            appContactsComboBox.getValue() == null || appStartComboBox.getValue() == null ||
+            appUserComboBox.getValue() == null || appDurationComboBox.getValue() == null);
+  }
+
+  @FXML
+  private void onActionReportContactBox() {
+    setValHelper(reportDatePicker, null);
+    reportDatePicker.setDisable(false);
+    appTimeBar.getChildren().clear();
+    setReportDatePicker(reportContactBox.getValue());
+  }
+
+  @FXML
+  private void onActionReportDatePicker() {
+    setTimeBar(reportContactBox.getValue());
+  }
+
+  @FXML
+  private void onActionAddApp() {
+    appTableView.getSelectionModel().clearSelection();
+    editAppBtn.setDisable(true);
+    deleteAppBtn.setDisable(true);
+    if (addAppBtn.isSelected()) {
+      appConfirmBtnImg.setImage(MainController.getAddImg());
+      setToolDrawerEditable(true);
+      if (!toolStackPane.getChildren().contains(appGridPane)) {
+        reportVbox.setVisible(false);
+        toolStackPane.getChildren().remove(reportVbox);
+        storagePane.getChildren().add(reportVbox);
+        toolStackPane.getChildren().add(appGridPane);
+        appGridPane.setVisible(true);
+      }
+      openToolDrawer(null);
+    } else {
+      setCollapseToolDrawer(true);
+    }
+  }
+
+  @FXML
+  private void onActionDeleteApp() {
+    if (deleteAppBtn.isSelected()) {
+      setToolDrawerEditable(false);
+      appConfirmBtnImg.setImage(MainController.getDeleteImg());
+
+      if (!toolStackPane.getChildren().contains(appGridPane)) {
+        reportVbox.setVisible(false);
+        toolStackPane.getChildren().remove(reportVbox);
+        storagePane.getChildren().add(reportVbox);
+        toolStackPane.getChildren().add(appGridPane);
+        appGridPane.setVisible(true);
+      }
+      openToolDrawer(appTableView.getSelectionModel().getSelectedItem());
+    } else {
+      setCollapseToolDrawer(true);
+    }
+  }
+
+  @FXML
+  private void onActionEditApp() {
+    if (editAppBtn.isSelected()) {
+      setToolDrawerEditable(true);
+      appConfirmBtnImg.setImage(MainController.getEditImg());
+      appConfirmBtn.setDisable(true);
+
+      if (!toolStackPane.getChildren().contains(appGridPane)) {
+        reportVbox.setVisible(false);
+        toolStackPane.getChildren().remove(reportVbox);
+        storagePane.getChildren().add(reportVbox);
+        toolStackPane.getChildren().add(appGridPane);
+        appGridPane.setVisible(true);
+      }
+
+      openToolDrawer(appTableView.getSelectionModel().getSelectedItem());
+    } else {
+      setCollapseToolDrawer(true);
+    }
+  }
+
+  @FXML
+  private void onActionReport() {
+    setReportTimes();
+    setupPieChart();
+    editAppBtn.setDisable(true);
+    deleteAppBtn.setDisable(true);
+    setValHelper(reportDatePicker, null);
+    reportDatePicker.setDisable(true);
+    setValHelper(reportContactBox, null);
+    appTimeBar.getChildren().clear();
+    if (reportBtn.isSelected()) {
+      if (!toolStackPane.getChildren().contains(reportVbox)) {
+        appGridPane.setVisible(false);
+        toolStackPane.getChildren().remove(appGridPane);
+        storagePane.getChildren().add(appGridPane);
+        toolStackPane.getChildren().add(reportVbox);
+        reportVbox.setVisible(true);
+      }
+      appTableView.getSelectionModel().clearSelection();
+      populateTypeComboBox();
+      openToolDrawer(null);
+    } else {
+      setCollapseToolDrawer(true);
+    }
+  }
+
+  @FXML
+  private void onActionDatePicker() {
+    if (appDatePicker.getValue() == null) {
+      return;
+    }
+    appDurationComboBox.setDisable(false);
+    var handler = appDurationComboBox.getOnAction();
+    appDurationComboBox.setOnAction(null);
+    appDurationComboBox.setValue(null);
+    appDurationComboBox.setOnAction(handler);
+    appStartComboBox.setValue(null);
+    appStartComboBox.setValue(null);
+    appStartComboBox.setDisable(true);
+  }
+
+  @FXML
+  private void onActionDurationComboBox() {
+    appStartComboBox.setDisable(false);
+    populateStartComboBox();
+    tryActivateConfirmBtn();
+  }
+
+  @FXML
+  private void onActionStartComboBox() {
+    tryActivateConfirmBtn();
+  }
+
+
+  @FXML
+  private void onActionCustComboBox() {
+    setValHelper(appDurationComboBox, null);
+    appDatePicker.setDisable(false);
+    setValHelper(appDatePicker, LocalDate.now());
+    setValHelper(appStartComboBox, null);
+    appStartComboBox.setDisable(true);
+    appDurationComboBox.setDisable(false);
+  }
+
+  @FXML
+  private void onActionContactComboBox() {
+    tryActivateConfirmBtn();
+  }
+
+  @FXML
+  private void onActionUserComboBox() {
+    tryActivateConfirmBtn();
+  }
+
+  @FXML
+  private void onActionTypeComboBox() {
+    tryActivateConfirmBtn();
+  }
+
+  @FXML
+  private void onKeyTypedAppField() {
+    tryActivateConfirmBtn();
+  }
+
+  @FXML
+  private void onActionConfirm() {
+    Appointment app = new Appointment();
+    app.setTitle(appTitleField.getText());
+    app.setAppointmentId(appIdField.getText() == null ? 0 : Integer.parseInt(appIdField.getText()));
+    app.setType(appTypeComboBox.getValue());
+    app.setLocation(appLocationField.getText());
+    app.setDescription(appDescriptionField.getText());
+    app.setStart(appStartComboBox.getValue());
+    app.setEnd(appStartComboBox.getValue().plusMinutes(appDurationComboBox.getValue()));
+    app.setCustomer(appCustComboBox.getValue());
+    app.setUser(appUserComboBox.getValue());
+    app.setContact(appContactsComboBox.getValue());
+    app.setCreatedBy(Database.getConnectedUser());
+    app.setLastUpdatedBy(Database.getConnectedUser());
+    if (addAppBtn.isSelected()) {
+      confirmAddApp(app);
+    } else if (deleteAppBtn.isSelected()) {
+      confirmDeleteApp(appTableView.getSelectionModel().getSelectedItem());
+    } else if (editAppBtn.isSelected()) {
+      confirmUpdateApp(app, appTableView.getSelectionModel().getSelectedItem());
+    }
+  }
+
+  @FXML
+  private void onActionRefresh() {
+    mainController.getTableProgress().setVisible(true);
+    appTableView.getSelectionModel().clearSelection();
+    setCollapseToolDrawer(true);
+    resetToolButtons();
+    MainController.getDbService().submit(() -> {
+      try {
+        Database.commit();
+        Platform.runLater(() -> mainController.notify(resourceBundle.getString("Changes Committed"),
+            MainController.NotificationType.SUCCESS, false)
+        );
+      } catch (SQLException e) {
+        Platform
+            .runLater(() -> mainController.notify(resourceBundle.getString("Failed to refresh database. Check connection."),
+                MainController.NotificationType.ERROR, false)
+            );
+      } finally {
+        Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
+      }
+    });
+    mainController.refresh();
+  }
+
+  @FXML
+  private void onActionAppMode() {
+    resetToolButtons();
+    setCollapseToolDrawer(true);
+    switch (curMode) {
+      case ALL:
+        curMode = Mode.MONTH;
+        break;
+      case MONTH:
+        curMode = Mode.WEEK;
+        break;
+      case WEEK:
+      case CONTACT:
+        curMode = Mode.ALL;
+        break;
+    }
+    modeImgView.setImage(curMode.img);
+    modeTooltip.setText(resourceBundle.getString(curMode.name()));
+    populateTable();
+  }
+
+
+  @FXML
+  private AnchorPane storagePane;
+
+  @FXML
+  private StackPane toolStackPane;
+
+  @FXML
+  private ImageView modeImgView;
+
+  @FXML
+  private Tooltip modeTooltip;
+
+  @FXML
+  private ToggleButton addAppBtn;
+
+  @FXML
+  private ToggleButton deleteAppBtn;
+
+  @FXML
+  private ToggleButton editAppBtn;
+
+  @FXML
+  private ToggleButton reportBtn;
+
+  @FXML
+  private TitledPane appToolDrawer;
+
+  @FXML
+  private TextField appTitleField;
+
+  @FXML
+  private TextArea appDescriptionField;
+
+  @FXML
+  private ComboBox<Customer> appCustComboBox;
+
+  @FXML
+  private TextField appLocationField;
+
+  @FXML
+  private ComboBox<Contact> appContactsComboBox;
+
+  @FXML
+  private ComboBox<User> appUserComboBox;
+
+  @FXML
+  private Button appConfirmBtn;
+
+  @FXML
+  private Button appRefreshBtn;
+
+  @FXML
+  private ImageView appConfirmBtnImg;
+
+  @FXML
+  private ComboBox<ZonedDateTime> appStartComboBox;
+
+  @FXML
+  private ComboBox<Integer> appDurationComboBox;
+
+  @FXML
+  private DatePicker appDatePicker;
+
+
+  @FXML
+  private TextField appIdField;
+
+  @FXML
+  private ComboBox<String> appTypeComboBox;
+
+  @FXML
+  private TableView<Appointment> appTableView;
+
+  @FXML
+  private TableColumn<Appointment, Integer> appIdCol;
+
+  @FXML
+  private TableColumn<Appointment, String> appTitleCol;
+
+  @FXML
+  private TableColumn<Appointment, String> appDescriptionCol;
+
+  @FXML
+  private TableColumn<Appointment, String> appLocationCol;
+
+  @FXML
+  private TableColumn<Appointment, String> appContactCol;
+
+  @FXML
+  private TableColumn<Appointment, String> appTypeCol;
+
+  @FXML
+  private TableColumn<Appointment, ZonedDateTime> appStartCol;
+
+  @FXML
+  private TableColumn<Appointment, ZonedDateTime> appEndCol;
+
+  @FXML
+  private TableColumn<Appointment, Integer> appCustIdCol;
+
+  @FXML
+  private GridPane appGridPane;
+
+  @FXML
+  private VBox reportVbox;
+
+  @FXML
+  private ComboBox<Contact> reportContactBox;
+
+  @FXML
+  private DatePicker reportDatePicker;
+
+  @FXML
+  private LineChart<String, Integer> monthTypeChart;
+
+  @FXML
+  private PieChart pieChart;
+
+  @FXML
+  private HBox appTimeBar;
+
+  @FXML
+  private Label contactScheduleLbl;
+
+  @FXML
+  private Label reportTimeLbl1;
+  @FXML
+  private Label reportTimeLbl2;
+  @FXML
+  private Label reportTimeLbl3;
+  @FXML
+  private Label reportTimeLbl4;
+  @FXML
+  private Label reportTimeLbl5;
+  @FXML
+  private Label reportTimeLbl6;
+  @FXML
+  private Label reportTimeLbl7;
+  @FXML
+  private Label reportTimeLbl8;
+
+  @FXML
+  private Label appIdLbl;
+  @FXML
+  private Label appTitleLbl;
+  @FXML
+  private Label appTypeLbl;
+  @FXML
+  private Label appDescriptionLbl;
+  @FXML
+  private Label appLocationLbl;
+  @FXML
+  private Label appDateLbl;
 }

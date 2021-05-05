@@ -153,7 +153,7 @@
                       <children>
                         <HBox alignment="CENTER_LEFT" maxWidth="1.7976931348623157E308" spacing="8.0">
                           <children>
-                            <Label minWidth="-Infinity" text="Title:" />
+                            <Label fx:id="appTitleLbl" minWidth="-Infinity" text="Title:" />
                             <TextField fx:id="appTitleField" onKeyTyped="#onKeyTypedAppField" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                           <GridPane.margin>
@@ -162,19 +162,19 @@
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.rowIndex="1">
                           <children>
-                            <Label minWidth="-Infinity" text="Location:" />
+                            <Label fx:id="appLocationLbl" minWidth="-Infinity" text="Location:" />
                             <TextField fx:id="appLocationField" onKeyTyped="#onKeyTypedAppField" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.rowIndex="2">
                           <children>
-                            <Label minWidth="-Infinity" text="Description:" />
+                            <Label fx:id="appDescriptionLbl" minWidth="-Infinity" text="Description:" />
                             <TextArea fx:id="appDescriptionField" maxHeight="0.0" onKeyTyped="#onKeyTypedAppField" style="-fx-opacity: 1;" wrapText="true" />
                           </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                           <children>
-                            <Label minWidth="-Infinity" text="Type:" />
+                            <Label fx:id="appTypeLbl" minWidth="-Infinity" text="Type:" />
                             <ComboBox fx:id="appTypeComboBox" editable="true" maxWidth="1.7976931348623157E308" onAction="#onActionTypeComboBox" onKeyReleased="#onKeyTypedAppField" promptText="Select or Create New" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>
@@ -191,7 +191,7 @@
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
                           <children>
-                            <Label minWidth="-Infinity" text="Date:" />
+                            <Label fx:id="appDateLbl" minWidth="-Infinity" text="Date:" />
                             <DatePicker fx:id="appDatePicker" disable="true" editable="false" maxWidth="1.7976931348623157E308" onAction="#onActionDatePicker" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>
@@ -218,7 +218,7 @@
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8.0" GridPane.columnIndex="1">
                           <children>
-                            <Label minWidth="-Infinity" text="ID:" />
+                            <Label fx:id="appIdLbl" minWidth="-Infinity" text="ID:" />
                             <TextField fx:id="appIdField" disable="true" editable="false" promptText="Auto-Generated" style="-fx-opacity: 1;" HBox.hgrow="ALWAYS" />
                           </children>
                         </HBox>
@@ -230,7 +230,7 @@
             </TitledPane>
             <TableView fx:id="appTableView" VBox.vgrow="ALWAYS">
               <columns>
-                <TableColumn fx:id="appIdCol" prefWidth="75.0" text="Appointment ID" />
+                <TableColumn fx:id="appIdCol" prefWidth="75.0" text="ID" />
                 <TableColumn fx:id="appTitleCol" prefWidth="75.0" text="Title" />
                 <TableColumn fx:id="appDescriptionCol" prefWidth="75.0" text="Description" />
                 <TableColumn fx:id="appLocationCol" prefWidth="75.0" text="Location" />
@@ -262,7 +262,7 @@
         </children>
       </HBox>
       <Separator prefWidth="200.0" />
-                  <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="Daily Contact Schedule">
+                  <Label fx:id="contactScheduleLbl" alignment="CENTER" maxWidth="1.7976931348623157E308" text="Daily Contact Schedule">
                      <font>
                         <Font size="18.0" />
                      </font>

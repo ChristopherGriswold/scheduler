@@ -11,15 +11,6 @@ public class User {
         this.userId = userId;
     }
 
-//    Table representation
-//    User_ID INT(10) (PK)
-//    User_Name VARCHAR(50) (UNIQUE)
-//    Password TEXT
-//    Create_Date DATETIME
-//    Created_By VARCHAR(50)
-//    Last_Update TIMESTAMP
-//    Last_Updated_By VARCHAR(50)
-
     public String getUserName() {
         return userName;
     }

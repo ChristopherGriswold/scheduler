@@ -15,7 +15,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="768.0" prefWidth="1024.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.iceybones.scheduler.application.controller.MainController">
+<BorderPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="0.0" minWidth="0.0" prefHeight="768.0" prefWidth="1024.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.iceybones.scheduler.application.controller.MainController">
    <bottom>
       <Accordion BorderPane.alignment="CENTER">
         <panes>
@@ -57,9 +57,9 @@
       </Accordion>
    </bottom>
    <center>
-      <StackPane prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+      <StackPane minHeight="200.0" BorderPane.alignment="CENTER">
          <children>
-            <TabPane fx:id="tabPane" prefHeight="200.0" prefWidth="200.0" side="LEFT" tabClosingPolicy="UNAVAILABLE">
+            <TabPane fx:id="tabPane" side="LEFT" tabClosingPolicy="UNAVAILABLE">
               <tabs>
                  <fx:include fx:id="appTab" source="appTab.fxml" />
                  <fx:include fx:id="custTab" source="custTab.fxml" />
