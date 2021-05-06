@@ -70,7 +70,7 @@ public class AppTabController implements Initializable {
   private Mode curMode = Mode.ALL;
   private MainController mainController;
   private double timeBarWidth = 0;
-  private final ZonedDateTime estStartDt = ZonedDateTime
+  private ZonedDateTime estStartDt = ZonedDateTime
       .of(LocalDateTime.of(LocalDate.now(), LocalTime.of(8, 0)), ZoneId.of("America/New_York"));
   private ResourceBundle resourceBundle;
 
@@ -111,7 +111,7 @@ public class AppTabController implements Initializable {
     appTableView.getColumns().get(5).setText(rb.getString("Type"));
     appTableView.getColumns().get(6).setText(rb.getString("Start"));
     appTableView.getColumns().get(7).setText(rb.getString("End"));
-    appTableView.getColumns().get(8).setText(rb.getString("Duration"));
+    appTableView.getColumns().get(8).setText(rb.getString("Customer ID"));
     appTypeComboBox.setPromptText(rb.getString("Select or Create"));
     appIdField.setPromptText(rb.getString("Auto-Generated"));
     appIdLbl.setText(rb.getString("ID") + ":");
@@ -919,7 +919,9 @@ public class AppTabController implements Initializable {
     for (var type : types) {
       int jan = 0, feb = 0, mar = 0, apr = 0, may = 0, jun = 0, jul = 0, aug = 0, sep = 0, oct = 0, nov = 0, dec = 0;
       for (var app : apps) {
-        if (app.getType().equals(type)) {
+        if (app.getType().equals(type)
+            && app.getStart().withZoneSameInstant(ZoneId.systemDefault()).getYear()
+            == ZonedDateTime.now().getYear()) {
           switch (app.getStart().withZoneSameInstant(ZoneId.systemDefault()).getMonth()) {
             case JANUARY:
               jan++;
@@ -1271,14 +1273,13 @@ public class AppTabController implements Initializable {
     if (appDatePicker.getValue() == null) {
       return;
     }
+    estStartDt = ZonedDateTime.of(appDatePicker.getValue(), estStartDt.toLocalTime(), estStartDt.getZone());
     appDurationComboBox.setDisable(false);
-    var handler = appDurationComboBox.getOnAction();
-    appDurationComboBox.setOnAction(null);
-    appDurationComboBox.setValue(null);
-    appDurationComboBox.setOnAction(handler);
-    appStartComboBox.setValue(null);
-    appStartComboBox.setValue(null);
+    setValHelper(appDurationComboBox, null);
+    setValHelper(appStartComboBox, null);
+    setValHelper(appStartComboBox, null);
     appStartComboBox.setDisable(true);
+    tryActivateConfirmBtn();
   }
 
   /**
