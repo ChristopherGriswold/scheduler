@@ -19,6 +19,9 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 
+/**
+ * Logic controller pertaining to the main scene.
+ */
 public class MainController implements Initializable {
 
   private static ExecutorService notifyService = Executors.newSingleThreadExecutor();
@@ -43,17 +46,30 @@ public class MainController implements Initializable {
   private static final Image blueClock = new Image(Objects.requireNonNull(MainController.class.
       getResourceAsStream("/resources/images/blue_clock.png")));
 
-
+  /**
+   * Used by the notification bar to identify which icon should be displayed.
+   */
   public enum NotificationType {
     ADD(addImg), EDIT(editImg), DELETE(deleteImg), SUCCESS(successImg),
     ERROR(errorImg), UPCOMING_APP(yellowClockImg), NONE_UPCOMING(greenClock);
     Image image;
 
+    /**
+     * Sets the image to the corresponding notification type.
+     *
+     * @param image the image icon that will be stored
+     */
     NotificationType(Image image) {
       this.image = image;
     }
   }
 
+  /**
+   * Sets up the scene GUI components.
+   *
+   * @param url the url of the scene's fxml layout
+   * @param rb  the currently loaded resource bundle
+   */
   @Override
   public void initialize(URL url, ResourceBundle rb) {
     resourceBundle = rb;
@@ -73,19 +89,37 @@ public class MainController implements Initializable {
     custTabController.populate();
   }
 
+  /**
+   * Shuts down the notification service.
+   */
   static void stopNotifyService() {
     notifyService.shutdown();
   }
 
+  /**
+   * Shuts down the database service.
+   */
   static void stopDbService() {
     dbService.shutdown();
   }
 
+  /**
+   * Forces the notification service to shutdown now and spawn a new thread to be used in it's
+   * place. This stops the notification bar from finishing it's cycle and closing at an inopportune
+   * time, namely when a second notification has been issued.
+   */
   static void cancelNotify() {
     notifyService.shutdownNow();
     notifyService = Executors.newSingleThreadExecutor();
   }
 
+  /**
+   * Open the notification bar, display a message for five seconds and then close.
+   *
+   * @param message  the message that will be displayed to the user
+   * @param type     the notification type that determines which icon will be displayed
+   * @param undoable sets whether or not the <code>undo</code> hyperlink will be displayed
+   */
   public void notify(String message, NotificationType type, Boolean undoable) {
     cancelNotify();
     notificationBar.setExpanded(true);
@@ -103,54 +137,98 @@ public class MainController implements Initializable {
     notifyService.shutdown();
   }
 
-  void refresh() {
+  /**
+   * Disable the <code>undo</code> hyperlink.
+   */
+  void disableUndo() {
     undoLink.setVisible(false);
   }
 
+  /**
+   * @return the service that has the sole responsibility of communicating with the database via
+   * static methods in the Database class.
+   */
   static ExecutorService getDbService() {
     return dbService;
   }
 
+  /**
+   * @return the add icon image
+   */
   static Image getAddImg() {
     return addImg;
   }
 
+  /**
+   * @return the delete icon image
+   */
   static Image getDeleteImg() {
     return deleteImg;
   }
 
+  /**
+   * @return the edit icon image
+   */
   static Image getEditImg() {
     return editImg;
   }
 
+  /**
+   * @return the red clock icon image
+   */
   static Image getRedClock() {
     return redClock;
   }
 
+  /**
+   * @return the yellow clock icon image
+   */
   static Image getYellowClockImg() {
     return yellowClockImg;
   }
 
+  /**
+   * @return the green clock icon image
+   */
   static Image getGreenClock() {
     return greenClock;
   }
 
+  /**
+   * @return the blue clock icon image
+   */
   static Image getBlueClock() {
     return blueClock;
   }
 
+  /**
+   * @return the table progress indicator
+   */
   ProgressIndicator getTableProgress() {
     return tableProgress;
   }
 
+  /**
+   * @return the application tab controller
+   */
   AppTabController getAppTabController() {
     return appTabController;
   }
 
+  /**
+   * @return the main tab pane
+   */
   TabPane getTabPane() {
     return tabPane;
   }
 
+  //////////////Event Handlers///////////////////
+
+  /**
+   * Rollback the database when the <code>undo</code> hyperlink is clicked. Two lambda expressions
+   * are used to implement the <code>Runnable</code> functional interface and help with thread
+   * management.
+   */
   @FXML
   private void onActionUndoLink() {
     tableProgress.setVisible(true);
@@ -167,13 +245,15 @@ public class MainController implements Initializable {
           notify(resourceBundle.getString("Undo Successful"), NotificationType.SUCCESS, false);
         });
       } catch (SQLException e) {
-        notify(resourceBundle.getString("Failed to undo. Check connection."), NotificationType.ERROR, false);
+        notify(resourceBundle.getString("Failed to undo. Check connection."),
+            NotificationType.ERROR, false);
       } finally {
         tableProgress.setVisible(false);
       }
     });
   }
 
+  /////////////////GUI Components///////////////////
   @FXML
   @SuppressWarnings("unused")
   private AppTabController appTabController;

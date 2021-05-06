@@ -15,6 +15,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Performs all interactions between the application and the MySql database. NOTE: All methods in
+ * this class are single threaded.
+ */
 public class Database {
 
   private static final String URL = "jdbc:mysql://wgudb.ucertify.com:3306/WJ07c5c";
@@ -24,40 +28,32 @@ public class Database {
       + "WHERE User_Name = ? AND Password = ?";
   private static final String GET_USERS_SQL = "SELECT User_Name, User_ID FROM users";
   private static final String GET_CONTACTS_SQL = "SELECT Contact_Name, Contact_ID FROM contacts";
-  private static final String GET_CUST_SQL = "SELECT Customer_Name, Customer_ID, Address, " +
-      "Postal_Code, Division_ID, Phone\n" +
-      "FROM customers\n" +
-      "ORDER BY Customer_ID";
-  private static final String GET_APPS_SQL =
-      "SELECT Title, Appointment_ID, Description, Location, " +
-          "Type, Start, End, Customer_ID, Contact_ID, User_ID\n" +
-          "FROM appointments\n"
-          + "ORDER BY Appointment_ID";
-  private static final String INSERT_CUST_SQL = "INSERT INTO customers\n" +
-      "(Customer_Name, Address, Postal_Code, Phone, Create_Date, " +
-      "Created_By, Last_Update, Last_Updated_By, Division_ID)\n" +
-      "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, ?, ?)";
-  private static final String UPDATE_CUST_SQL = "UPDATE customers\n" +
-      "SET Customer_Name = ?, Address = ?, Postal_Code = ?, Phone = ?, " +
-      "Last_Update = CURRENT_TIMESTAMP, Last_Updated_By = ?, Division_ID = ?\n" +
-      "WHERE Customer_ID = ?";
-  private static final String UPDATE_APP_SQL = "UPDATE appointments\n" +
-      "SET Title = ?, Description = ?, Location = ?, Type = ?, Start = ?, End = ?, Last_Update = CURRENT_TIMESTAMP, "
-      + "Last_Updated_By = ?, Customer_ID = ?, User_ID = ?, Contact_ID = ?\n"
-      + "WHERE Appointment_ID = ?";
+  private static final String GET_CUST_SQL = "SELECT Customer_Name, Customer_ID, "
+      + "Address, Postal_Code, Division_ID, Phone "
+      + "FROM customers ORDER BY Customer_ID";
+  private static final String GET_APPS_SQL = "SELECT Title, Appointment_ID, Description, Location, "
+      + "Type, Start, End, Customer_ID, Contact_ID, User_ID "
+      + "FROM appointments ORDER BY Appointment_ID";
+  private static final String INSERT_CUST_SQL = "INSERT INTO customers (Customer_Name, Address, "
+      + "Postal_Code, Phone, Create_Date, Created_By, Last_Update, Last_Updated_By, Division_ID) "
+      + "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, ?, ?)";
+  private static final String UPDATE_CUST_SQL = "UPDATE customers SET Customer_Name = ?, "
+      + "Address = ?, Postal_Code = ?, Phone = ?, Last_Update = CURRENT_TIMESTAMP, "
+      + "Last_Updated_By = ?, Division_ID = ? WHERE Customer_ID = ?";
+  private static final String UPDATE_APP_SQL = "UPDATE appointments SET Title = ?, "
+      + "Description = ?, Location = ?, Type = ?, Start = ?, End = ?, "
+      + "Last_Update = CURRENT_TIMESTAMP, Last_Updated_By = ?, Customer_ID = ?, "
+      + "User_ID = ?, Contact_ID = ? WHERE Appointment_ID = ?";
   private static final String DELETE_CUST_APP_SQL = "DELETE FROM appointments WHERE Customer_ID = ?";
   private static final String DELETE_CUST_SQL = "DELETE FROM customers WHERE Customer_ID = ?";
   private static final String DELETE_APP_SQL = "DELETE FROM appointments WHERE Appointment_ID = ?";
-  private static final String GET_DIVISIONS_SQL =
-      "SELECT d.Division, d.Division_ID, c.Country, c.Country_ID\n" +
-          "FROM countries c\n" +
-          "JOIN first_level_divisions d\n" +
-          "ON c.Country_ID = d.Country_ID\n" +
-          "ORDER BY d.Division_ID";
-  private static final String INSERT_APP_SQL = "INSERT INTO appointments " +
-      "(Title, Description, Location, Type, Start, End, Create_Date, Created_By, Last_Update, " +
-      "Last_Updated_By, Customer_ID, User_ID, Contact_ID)\n" +
-      "VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)";
+  private static final String GET_DIVISIONS_SQL = "SELECT d.Division, d.Division_ID, c.Country, "
+      + "c.Country_ID FROM countries c JOIN first_level_divisions d ON c.Country_ID = d.Country_ID "
+      + "ORDER BY d.Division_ID";
+  private static final String INSERT_APP_SQL = "INSERT INTO appointments (Title, Description, "
+      + "Location, Type, Start, End, Create_Date, Created_By, Last_Update, Last_Updated_By, "
+      + "Customer_ID, User_ID, Contact_ID) "
+      + "VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)";
   private static Connection connection;
   private static User connectedUser;
   private static final List<Division> divisions = new ArrayList<>();
@@ -77,6 +73,13 @@ public class Database {
 
   ///////////////////Common Methods//////////////////////////
 
+  /**
+   * Gets the active connection to the database. If the current connection is no longer valid
+   * establish a new one.
+   *
+   * @return the active connection to the database
+   * @throws SQLException if the database cannot be reached
+   */
   private static Connection getConnection() throws SQLException {
     if (!connection.isValid(1)) {
       connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
@@ -85,17 +88,39 @@ public class Database {
     return connection;
   }
 
+  /**
+   * Performs an SQL rollback operation on the database. This reverts all transactions since the
+   * last explicit or implicit commit. Automatically syncs the cached customer and appointment lists
+   * with the database after the rollback.
+   *
+   * @throws SQLException if the database cannot be reached
+   */
   public static void rollback() throws SQLException {
     getConnection().rollback();
     cacheCustomers();
     cacheAppointments();
   }
 
-  public static void commit() throws SQLException {
+  /**
+   * Performs an SQL commit operation on the database. This finalizes any pending transactions.
+   *
+   * @throws SQLException if the database cannot be reached
+   */
+  static void commit() throws SQLException {
     getConnection().commit();
   }
 
-  public static void login(String userName, String password) throws Exception {
+  /**
+   * Connects to the database and authenticates the provided login credentials. If login fails the
+   * database connection is closed and an exception is thrown.
+   *
+   * @param userName the name entered by the user attempting to connect
+   * @param password the password entered by the user attempting to connect
+   * @throws Exception    if the <code>userName</code> or <code>password</code> provided do not
+   *                      match a valid database record
+   * @throws SQLException if the database cannot be reached or input is invalid
+   */
+  static void login(String userName, String password) throws Exception {
     try {
       var sql = getConnection().prepareStatement(LOGIN_SQL);
       sql.setString(1, userName);
@@ -112,10 +137,22 @@ public class Database {
     }
   }
 
+  /**
+   * Returns the <code>user</code> object representing the user that has successfully logged into
+   * the database. This object contains only the user's name and ID.
+   *
+   * @return the current user
+   */
   public static User getConnectedUser() {
     return connectedUser;
   }
 
+  /**
+   * Performs a database query to retrieve all <code>users</code> and updates the <code>users</code>
+   * field with the result.
+   *
+   * @throws SQLException if the database cannot be reached
+   */
   private static void cacheUsers() throws SQLException {
     var sql = getConnection().prepareStatement(GET_USERS_SQL);
     var rs = sql.executeQuery();
@@ -124,14 +161,30 @@ public class Database {
     }
   }
 
-  public static List<User> getUsers() throws SQLException {
+  /**
+   * Returns the cached list of <code>users</code>. If the <code>users</code> list is empty an
+   * attempt is made to re-cache and return the list.
+   *
+   * @return the list of users
+   * @throws SQLException if the database cannot be reached while attempting to re-cache
+   */
+  static List<User> getUsers() throws SQLException {
     if (users.isEmpty()) {
       cacheUsers();
     }
     return users;
   }
 
-  public static User getUser(int id) throws SQLException {
+  /**
+   * Returns the <code>user</code> object matching the provided <code>id</code> if it exists in the
+   * <code>users</code> list. If the <code>users</code> list is empty an attempt is made to
+   * re-cache the list.
+   *
+   * @param id the user's ID number
+   * @return the user matching the provided <code>id</code>
+   * @throws SQLException if the database cannot be reached while attempting to re-cache
+   */
+  static User getUser(int id) throws SQLException {
     if (users.isEmpty()) {
       cacheUsers();
     }
@@ -139,6 +192,12 @@ public class Database {
     return user.orElse(null);
   }
 
+  /**
+   * Performs a database query to retrieve all <code>contacts</code> and updates the
+   * <code>contacts</code> field with the result.
+   *
+   * @throws SQLException if the database cannot be reached
+   */
   private static void cacheContacts() throws SQLException {
     contacts.clear();
     var sql = getConnection().prepareStatement(GET_CONTACTS_SQL);
@@ -148,14 +207,31 @@ public class Database {
     }
   }
 
-  public static List<Contact> getContacts() throws SQLException {
+  /**
+   * Returns the cached list of <code>contacts</code>. If the <code>contacts</code> list is empty an
+   * attempt is made to re-cache and return the list.
+   *
+   * @return the list of contacts
+   * @throws SQLException if the database cannot be reached while attempting to re-cache
+   */
+  static List<Contact> getContacts() throws SQLException {
     if (contacts.isEmpty()) {
       cacheContacts();
     }
     return contacts;
   }
 
-  public static Contact getContact(int id) throws SQLException {
+  /**
+   * Returns the <code>contact</code> object matching the provided <code>id</code> if it exists in
+   * the
+   * <code>contacts</code> list. If the <code>contacts</code> list is empty an attempt is made to
+   * re-cache the list.
+   *
+   * @param id the contact's ID number
+   * @return the contact matching the provided <code>id</code>
+   * @throws SQLException if the database cannot be reached while attempting to re-cache
+   */
+  static Contact getContact(int id) throws SQLException {
     if (contacts.isEmpty()) {
       cacheContacts();
     }
@@ -163,6 +239,12 @@ public class Database {
     return contact.orElse(null);
   }
 
+  /**
+   * Performs a database query to retrieve all <code>divisions</code> and updates the
+   * <code>divisions</code> field with the result.
+   *
+   * @throws SQLException if the database cannot be reached
+   */
   private static void cacheDivisions() throws SQLException {
     var sql = getConnection().prepareStatement(GET_DIVISIONS_SQL);
     var rs = sql.executeQuery();
@@ -172,7 +254,17 @@ public class Database {
     }
   }
 
-  public static Division getDivision(int id) throws SQLException {
+  /**
+   * Returns the <code>division</code> object matching the provided <code>id</code> if it exists in
+   * the
+   * <code>division</code> list. If the <code>divisions</code> list is empty an attempt is made to
+   * re-cache the list.
+   *
+   * @param id the division's ID number
+   * @return the division matching the provided <code>id</code>
+   * @throws SQLException if the database cannot be reached while attempting to re-cache
+   */
+  static Division getDivision(int id) throws SQLException {
     if (divisions.isEmpty()) {
       cacheDivisions();
     }
@@ -180,7 +272,17 @@ public class Database {
     return division.orElse(null);
   }
 
-  public static List<Division> getDivisionsByCountry(Country country) throws SQLException {
+  /**
+   * Returns a list of <code>division</code> objects matching the provided <code>country</code> that
+   * exist in the
+   * <code>division</code> list. If the <code>divisions</code> list is empty an attempt is made to
+   * re-cache the list.
+   *
+   * @param country the country that will be matched against
+   * @return a list of the divisions matching the provided <code>country</code>
+   * @throws SQLException if the database cannot be reached while attempting to re-cache
+   */
+  static List<Division> getDivisionsByCountry(Country country) throws SQLException {
     if (divisions.isEmpty()) {
       cacheDivisions();
     }
@@ -188,7 +290,14 @@ public class Database {
         .collect(Collectors.toList());
   }
 
-  public static List<Country> getCountries() throws SQLException {
+  /**
+   * Returns the cached list of <code>countries</code>. If the <code>countries</code> list is empty
+   * an attempt is made to re-cache and return the list.
+   *
+   * @return the list of countries
+   * @throws SQLException if the database cannot be reached while attempting to re-cache
+   */
+  static List<Country> getCountries() throws SQLException {
     if (divisions.isEmpty()) {
       cacheDivisions();
     }
@@ -198,6 +307,12 @@ public class Database {
 
   ///////////////////Customer Methods//////////////////////////
 
+  /**
+   * Performs a database query to retrieve all <code>customers</code> and updates the
+   * <code>customers</code> field with the result.
+   *
+   * @throws SQLException if the database cannot be reached
+   */
   private static void cacheCustomers() throws SQLException {
     customers.clear();
     var sql = getConnection().prepareStatement(GET_CUST_SQL);
@@ -214,7 +329,17 @@ public class Database {
     }
   }
 
-  public static Customer getCustomer(int id) throws SQLException {
+  /**
+   * Returns the <code>customer</code> object matching the provided <code>id</code> if it exists in
+   * the
+   * <code>customers</code> list. If the <code>customers</code> list is empty an attempt is made to
+   * re-cache the list.
+   *
+   * @param id the customer's ID number
+   * @return the customer matching the provided <code>id</code>
+   * @throws SQLException if the database cannot be reached while attempting to re-cache
+   */
+  static Customer getCustomer(int id) throws SQLException {
     if (customers.isEmpty()) {
       cacheCustomers();
     }
@@ -222,14 +347,34 @@ public class Database {
     return customer.orElse(null);
   }
 
-  public static List<Customer> getCustomers() throws SQLException {
+  /**
+   * Returns the cached list of <code>customers</code>. If the <code>customers</code> list is empty
+   * an attempt is made to re-cache and return the list.
+   *
+   * @return the list of customers
+   * @throws SQLException if the database cannot be reached while attempting to re-cache
+   */
+  static List<Customer> getCustomers() throws SQLException {
     if (customers.isEmpty()) {
       cacheCustomers();
     }
     return customers;
   }
 
-  public static int insertCustomer(Customer customer) throws SQLException {
+  /**
+   * Inserts a new customer record into the database and returns the <code>customerId</code>
+   * generated by the database. A commit is performed on the database before submitting the
+   * <code>INSERT</code> request and the <code>customers</code> list is subsequently updated to
+   * include the new customer.
+   *
+   * @param customer the <code>customer</code> to be inserted into the database
+   * @return the <code>customerId</code> generated by the database
+   * @throws SQLException if the database cannot be reached or data contained in the
+   *                      <code>customer</code> object does not comply with the parameters set
+   *                      within the database. For example, a <code>name</code> field being more
+   *                      characters than the database is set to allow.
+   */
+  static int insertCustomer(Customer customer) throws SQLException {
     commit();
     var sql = getConnection().prepareStatement(INSERT_CUST_SQL);
     sql.setString(1, customer.getCustomerName());
@@ -244,7 +389,19 @@ public class Database {
     return customers.get(customers.size() - 1).getCustomerId();
   }
 
-  public static void updateCustomer(Customer customer) throws SQLException {
+  /**
+   * Updates a customer record in the database. A commit is performed on the database before
+   * submitting the
+   * <code>UPDATE</code> request and the corresponding <code>customer</code> in
+   * <code>customers</code> list is updated.
+   *
+   * @param customer the <code>customer</code> to be inserted into the database
+   * @throws SQLException if the database cannot be reached or data contained in the
+   *                      <code>customer</code> object does not comply with the parameters set
+   *                      within the database. For example, a <code>name</code> field being more
+   *                      characters than the database is set to allow.
+   */
+  static void updateCustomer(Customer customer) throws SQLException {
     commit();
     var sql = getConnection().prepareStatement(UPDATE_CUST_SQL);
     sql.setString(1, customer.getCustomerName());
@@ -255,9 +412,18 @@ public class Database {
     sql.setInt(6, customer.getDivision().getDivisionId());
     sql.setInt(7, customer.getCustomerId());
     sql.executeUpdate();
+    customers.set(customers.indexOf(customer), customer);
   }
 
-  public static void deleteCustomer(Customer customer) throws SQLException {
+  /**
+   * Removes a customer record from the database. A commit is performed on the database before
+   * submitting the <code>DELETE</code> request and the <code>customers</code> list is subsequently
+   * updated to reflect the removal of the <code>customer</code>.
+   *
+   * @param customer the <code>customer</code> to be deleted from the database
+   * @throws SQLException if the database cannot be reached.
+   */
+  static void deleteCustomer(Customer customer) throws SQLException {
     commit();
     var sql = getConnection().prepareStatement(DELETE_CUST_APP_SQL);
     sql.setInt(1, customer.getCustomerId());
@@ -271,6 +437,12 @@ public class Database {
 
   ///////////////////Appointment Methods//////////////////////////
 
+  /**
+   * Performs a database query to retrieve all <code>appointments</code> and updates the
+   * <code>appointments</code> field with the result.
+   *
+   * @throws SQLException if the database cannot be reached
+   */
   private static void cacheAppointments() throws SQLException {
     appointments.clear();
     var sql = getConnection().prepareStatement(GET_APPS_SQL);
@@ -293,33 +465,65 @@ public class Database {
     }
   }
 
-  public static List<Appointment> getAppointments() throws SQLException {
+  /**
+   * Returns the cached list of <code>appointments</code>. If the <code>appointments</code> list is
+   * empty an attempt is made to re-cache and return the list.
+   *
+   * @return the list of appointments
+   * @throws SQLException if the database cannot be reached while attempting to re-cache
+   */
+  static List<Appointment> getAppointments() throws SQLException {
     if (appointments.isEmpty()) {
       cacheAppointments();
     }
     return appointments;
   }
 
-  public static int insertAppointment(Appointment app) throws SQLException {
+  /**
+   * Inserts a new appointment record into the database and returns the <code>appointmentId</code>
+   * generated by the database. A commit is performed on the database before submitting the insert
+   * request and the <code>appointment</code> list is subsequently updated to include the new
+   * appointment.
+   *
+   * @param appointment the <code>appointment</code> to be inserted into the database
+   * @return the <code>appointmentId</code> generated by the database
+   * @throws SQLException if the database cannot be reached or data contained in the
+   *                      <code>appointment</code> object does not comply with the parameters set
+   *                      within the database. For example, a <code>title</code> field being more
+   *                      characters than the database is set to allow.
+   */
+  static int insertAppointment(Appointment appointment) throws SQLException {
     commit();
     var sql = getConnection().prepareStatement(INSERT_APP_SQL);
-    sql.setString(1, app.getTitle());
-    sql.setString(2, app.getDescription());
-    sql.setString(3, app.getLocation());
-    sql.setString(4, app.getType());
-    sql.setTimestamp(5, Timestamp.from(app.getStart().toInstant()));
-    sql.setTimestamp(6, Timestamp.from(app.getEnd().toInstant()));
-    sql.setString(7, app.getCreatedBy().getUserName());
-    sql.setString(8, app.getLastUpdatedBy().getUserName());
-    sql.setInt(9, app.getCustomer().getCustomerId());
-    sql.setInt(10, app.getUser().getUserId());
-    sql.setInt(11, app.getContact().getContactId());
+    sql.setString(1, appointment.getTitle());
+    sql.setString(2, appointment.getDescription());
+    sql.setString(3, appointment.getLocation());
+    sql.setString(4, appointment.getType());
+    sql.setTimestamp(5, Timestamp.from(appointment.getStart().toInstant()));
+    sql.setTimestamp(6, Timestamp.from(appointment.getEnd().toInstant()));
+    sql.setString(7, appointment.getCreatedBy().getUserName());
+    sql.setString(8, appointment.getLastUpdatedBy().getUserName());
+    sql.setInt(9, appointment.getCustomer().getCustomerId());
+    sql.setInt(10, appointment.getUser().getUserId());
+    sql.setInt(11, appointment.getContact().getContactId());
     sql.executeUpdate();
     cacheAppointments();
     return appointments.get(appointments.size() - 1).getAppointmentId();
   }
 
-  public static void updateAppointment(Appointment appointment) throws SQLException {
+  /**
+   * Updates an appointment in the database. A commit is performed on the database before submitting
+   * the
+   * <code>UPDATE</code> request and the corresponding <code>appointment</code> in
+   * <code>appointments</code> list is updated.
+   *
+   * @param appointment the <code>appointment</code> to be inserted into the database
+   * @throws SQLException if the database cannot be reached or data contained in the
+   *                      <code>appointment</code> object does not comply with the parameters set
+   *                      within the database. For example, a <code>title</code> field being more
+   *                      characters than the database is set to allow.
+   */
+  static void updateAppointment(Appointment appointment) throws SQLException {
     commit();
     var sql = getConnection().prepareStatement(UPDATE_APP_SQL);
     sql.setString(1, appointment.getTitle());
@@ -337,7 +541,15 @@ public class Database {
     appointments.set(appointments.indexOf(appointment), appointment);
   }
 
-  public static void deleteAppointment(Appointment appointment) throws SQLException {
+  /**
+   * Removes an appointment from the database. A commit is performed on the database before
+   * submitting the <code>DELETE</code> request and the <code>appointment</code> list is
+   * subsequently updated to reflect the removal of the <code>appointment</code>.
+   *
+   * @param appointment the <code>appointment</code> to be deleted from the database
+   * @throws SQLException if the database cannot be reached.
+   */
+  static void deleteAppointment(Appointment appointment) throws SQLException {
     commit();
     var sql = getConnection().prepareStatement(DELETE_APP_SQL);
     sql.setInt(1, appointment.getAppointmentId());

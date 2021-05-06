@@ -62,14 +62,21 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
+/**
+ * Logic controller pertaining to the application tab of the main scene.
+ */
 public class AppTabController implements Initializable {
+
   private Mode curMode = Mode.ALL;
   private MainController mainController;
   private double timeBarWidth = 0;
-  private final ZonedDateTime utcStartDt = ZonedDateTime
-      .of(LocalDateTime.of(LocalDate.now(), LocalTime.of(12, 0)), ZoneId.of("UTC"));
+  private final ZonedDateTime estStartDt = ZonedDateTime
+      .of(LocalDateTime.of(LocalDate.now(), LocalTime.of(8, 0)), ZoneId.of("America/New_York"));
   private ResourceBundle resourceBundle;
 
+  /**
+   * Used by the mode button to identify which icon should be displayed.
+   */
   private enum Mode {
     ALL(MainController.getGreenClock()),
     MONTH(MainController.getYellowClockImg()),
@@ -82,6 +89,17 @@ public class AppTabController implements Initializable {
     }
   }
 
+  /**
+   * Sets up the scene GUI components utilizing the resource bundle for text values. Two lambda
+   * expressions is used to implement the <code>ChangeListener</code> interface and provide extra
+   * functionality for when users select items in the <code>appTableView</code> and to resize the
+   * daily contact schedule time bar so that it matches the width of its parent whenever the window
+   * is resized. Lambdas are also used to implement the <code>Callback</code> interface to assist
+   * with the formatting of table cells.
+   *
+   * @param url the url of the scene's fxml layout
+   * @param rb  the currently loaded resource bundle
+   */
   @Override
   public void initialize(URL url, ResourceBundle rb) {
     resourceBundle = rb;
@@ -98,7 +116,7 @@ public class AppTabController implements Initializable {
     appIdField.setPromptText(rb.getString("Auto-Generated"));
     appIdLbl.setText(rb.getString("ID") + ":");
     appTitleLbl.setText(rb.getString("Title") + ":");
-    appDescriptionLbl.setText(rb.getString("Description")+  ":");
+    appDescriptionLbl.setText(rb.getString("Description") + ":");
     appTypeLbl.setText(rb.getString("Type") + ":");
     appLocationLbl.setText(rb.getString("Location") + ":");
     appDateLbl.setText(rb.getString("Date") + ":");
@@ -112,7 +130,6 @@ public class AppTabController implements Initializable {
     monthTypeChart.setTitle(rb.getString("Appointments by Type/Month"));
     contactScheduleLbl.setText(rb.getString("Daily Contact Schedule"));
     appConfirmBtn.getTooltip().setText(rb.getString("Confirm Submission"));
-
     populateDurationComboBox();
     setupTable();
     appDatePicker.setDayCellFactory(picker -> new DateCell() {
@@ -244,22 +261,37 @@ public class AppTabController implements Initializable {
       }
     });
     timeBarWidth = appTimeBar.getWidth();
-    appTimeBar.widthProperty().addListener((obs, oldVal, newVal) -> calculateTimeBar(appTimeBar.getChildren()));
+    appTimeBar.widthProperty()
+        .addListener((obs, oldVal, newVal) -> calculateTimeBar(appTimeBar.getChildren()));
   }
 
+  /**
+   * Links this controller to it's parent controller.
+   *
+   * @param mainController the parent controller
+   */
   void setMainController(MainController mainController) {
     this.mainController = mainController;
   }
 
+  /**
+   * Calls populate on both the <code>appointment</code> table, and the combo boxes. Also calls
+   * <code>checkForUpcomingApp</code> as that operation must be performed immediately after all
+   * initialization methods have run.
+   */
   void populate() {
     populateTable();
     populateContactComboBox();
     populateUserComboBox();
     populateCustComboBox();
     populateTypeComboBox();
-    checkForUpcomingApps();
+    checkForUpcomingApp();
   }
 
+  /**
+   * Links columns of the <code>appointment</code> table with corresponding <code>appointment</code>
+   * object values.
+   */
   private void setupTable() {
     appIdCol.setCellValueFactory(new PropertyValueFactory<>("appointmentId"));
     appTitleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
@@ -272,6 +304,13 @@ public class AppTabController implements Initializable {
     appCustIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
   }
 
+  /**
+   * Gets all <code>appointment</code> data from the Database class and uses it to populate the
+   * table view. A lambda expression is used to implement the <code>Runnable</code> interface and
+   * submit the task to the database to fetch the appointment records. Three more
+   * <code>Runnable</code> lambdas are nested inside to update GUI components on the JavaFX thread.
+   * A notification is displayed if the database request fails for any reason.
+   */
   void populateTable() {
     mainController.getTableProgress().setVisible(true);
     MainController.getDbService().submit(() -> {
@@ -282,21 +321,32 @@ public class AppTabController implements Initializable {
           appTableView.getItems().addAll(filterApps(appointments, curMode));
         });
       } catch (SQLException e) {
-        Platform.runLater(() -> mainController.notify(resourceBundle.getString("Failed to populate table. Check connection."),
-            NotificationType.ERROR, false));
+        Platform.runLater(() -> mainController
+            .notify(resourceBundle.getString("Failed to populate table. Check connection."),
+                NotificationType.ERROR, false));
       } finally {
         Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
       }
     });
   }
 
+  /**
+   * Gets all type data from the Database class and uses it to populate the
+   * <code>countryComboBox</code>. A lambda expression is used to implement the
+   * <code>Runnable</code> interface and submit the task to the database. Two more
+   * <code>Runnable</code> lambdas are nested inside to update GUI components on
+   * the JavaFX thread. A notification is displayed if the database request fails for any reason.
+   */
   private void populateTypeComboBox() {
     MainController.getDbService().submit(() -> {
       List<Appointment> apps = new ArrayList<>();
       try {
         apps = Database.getAppointments();
       } catch (SQLException e) {
-        e.printStackTrace();
+        Platform.runLater(
+            () -> mainController.notify(
+                resourceBundle.getString("Failed to populate type box. Check connection."),
+                MainController.NotificationType.ERROR, false));
       }
       Set<String> types = new HashSet<>();
       for (var app : apps) {
@@ -310,6 +360,13 @@ public class AppTabController implements Initializable {
     });
   }
 
+  /**
+   * Gets all <code>customer</code> data from the Database class and uses it to populate the
+   * <code>custComboBox</code>. A lambda expression is used to implement the
+   * <code>Runnable</code> interface and submit the task to the database. Two more
+   * <code>Runnable</code> lambdas are nested inside to update GUI components on
+   * the JavaFX thread. A notification is displayed if the database request fails for any reason.
+   */
   private void populateCustComboBox() {
     appCustComboBox.getItems().clear();
     MainController.getDbService().submit(() -> {
@@ -324,12 +381,20 @@ public class AppTabController implements Initializable {
         });
       } catch (SQLException e) {
         Platform.runLater(
-            () -> mainController.notify(resourceBundle.getString("Failed to populate customer box. Check connection."),
+            () -> mainController.notify(
+                resourceBundle.getString("Failed to populate customer box. Check connection."),
                 NotificationType.ERROR, false));
       }
     });
   }
 
+  /**
+   * Gets all <code>contact</code> data from the Database class and uses it to populate the
+   * <code>contactComboBox</code>. A lambda expression is used to implement the
+   * <code>Runnable</code> interface and submit the task to the database. A second
+   * <code>Runnable</code> lambda is nested inside to update GUI components on
+   * the JavaFX thread. A notification is displayed if the database request fails for any reason.
+   */
   private void populateContactComboBox() {
     appContactsComboBox.getItems().clear();
     MainController.getDbService().submit(() -> {
@@ -339,12 +404,20 @@ public class AppTabController implements Initializable {
         reportContactBox.getItems().addAll(contacts);
       } catch (SQLException e) {
         Platform.runLater(
-            () -> mainController.notify(resourceBundle.getString("Failed to populate contact box. Check connection."),
+            () -> mainController.notify(
+                resourceBundle.getString("Failed to populate contact box. Check connection."),
                 NotificationType.ERROR, false));
       }
     });
   }
 
+  /**
+   * Gets all <code>user</code> data from the Database class and uses it to populate the
+   * <code>userComboBox</code>. A lambda expression is used to implement the
+   * <code>Runnable</code> interface and submit the task to the database. A second
+   * <code>Runnable</code> lambda is nested inside to update GUI components on
+   * the JavaFX thread. A notification is displayed if the database request fails for any reason.
+   */
   private void populateUserComboBox() {
     appUserComboBox.getItems().clear();
     MainController.getDbService().submit(() -> {
@@ -353,12 +426,17 @@ public class AppTabController implements Initializable {
         appUserComboBox.getItems().addAll(users);
       } catch (SQLException e) {
         Platform
-            .runLater(() -> mainController.notify(resourceBundle.getString("Failed to populate user box. Check connection."),
-                NotificationType.ERROR, false));
+            .runLater(() -> mainController
+                .notify(resourceBundle.getString("Failed to populate user box. Check connection."),
+                    NotificationType.ERROR, false));
       }
     });
   }
 
+  /**
+   * Gets all the available start times, formats them and populates the <code>startComboBox</code>
+   * with them.
+   */
   private void populateStartComboBox() {
     Customer cust = appCustComboBox.getSelectionModel().getSelectedItem();
     var handler = appStartComboBox.getOnAction();
@@ -394,6 +472,9 @@ public class AppTabController implements Initializable {
     });
   }
 
+  /**
+   * Populates the <code>durationComboBox</code> with formatted durations in various increments.
+   */
   private void populateDurationComboBox() {
     appDurationComboBox.setConverter(new StringConverter<>() {
       @Override
@@ -409,27 +490,42 @@ public class AppTabController implements Initializable {
     appDurationComboBox.getItems().addAll(List.of(15, 30, 45, 60, 90, 120));
   }
 
+  /**
+   * Sets all the time labels in the daily contact schedule within the reporting dashboard according
+   * to the current Locale.
+   */
   private void setReportTimes() {
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a");
     reportTimeLbl1
-        .setText(formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault())));
+        .setText(formatter.format(estStartDt.withZoneSameInstant(ZoneId.systemDefault())));
     reportTimeLbl2.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(2)));
+        formatter.format(estStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(2)));
     reportTimeLbl3.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(4)));
+        formatter.format(estStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(4)));
     reportTimeLbl4.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(6)));
+        formatter.format(estStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(6)));
     reportTimeLbl5.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(8)));
+        formatter.format(estStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(8)));
     reportTimeLbl6.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(10)));
+        formatter.format(estStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(10)));
     reportTimeLbl7.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(12)));
+        formatter.format(estStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(12)));
     reportTimeLbl8.setText(
-        formatter.format(utcStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(14)));
+        formatter.format(estStartDt.withZoneSameInstant(ZoneId.systemDefault()).plusHours(14)));
   }
 
-  private void checkForUpcomingApps() {
+  /**
+   * Checks to see if the currently logged in user has an appointment scheduled within the next
+   * fifteen minutes. A lambda expression is used to implement the <code>Runnable</code> interface
+   * and submit the task to the database to fetch the appointment records. Three more
+   * <code>Runnable</code> lambdas are nested inside to update GUI components on
+   * the JavaFX thread. A notification is displayed indicating whether or not there is an upcoming
+   * appointment or if the database request fails for any reason. Lastly, <code>Predicate</code>
+   * and
+   * <code>Comparable</code> interfaces are implemented with lambda expressions in a stream used to
+   * filter the appointment list.
+   */
+  private void checkForUpcomingApp() {
     MainController.getDbService().submit(() -> {
       try {
         Optional<Appointment> nearestApp = Database.getAppointments().parallelStream()
@@ -439,20 +535,27 @@ public class AppTabController implements Initializable {
         if (nearestApp.isPresent() &&
             nearestApp.get().getStart().withZoneSameInstant(ZoneId.systemDefault())
                 .isBefore(ZonedDateTime.now().plusMinutes(15))) {
-          Platform.runLater(
-              () -> mainController
-                  .notify(resourceBundle.getString("Upcoming Appointment") + ": " + nearestApp.get(), NotificationType.UPCOMING_APP,
-                      false));
+          Platform.runLater(() -> mainController
+              .notify(resourceBundle.getString("Upcoming Appointment") + ": " + nearestApp.get(),
+                  NotificationType.UPCOMING_APP, false));
         } else {
-          Platform.runLater(() -> mainController.notify(resourceBundle.getString("No Upcoming Appointments"),
-              NotificationType.NONE_UPCOMING, false));
+          Platform.runLater(
+              () -> mainController.notify(resourceBundle.getString("No Upcoming Appointments"),
+                  NotificationType.NONE_UPCOMING, false));
         }
       } catch (SQLException e) {
-        e.printStackTrace();
+        Platform.runLater(() -> mainController
+            .notify(resourceBundle.getString("Failed to fetch upcoming appointment"),
+                NotificationType.ERROR, false));
       }
     });
   }
 
+  /**
+   * Helper method used to open and closes the tool drawer.
+   *
+   * @param b if the tool drawer should be closed
+   */
   void setCollapseToolDrawer(boolean b) {
     if (b) {
       appToolDrawer.setAnimated(true);
@@ -463,6 +566,9 @@ public class AppTabController implements Initializable {
     appToolDrawer.setAnimated(false);
   }
 
+  /**
+   * Clears all the GUI components in the tool drawer.
+   */
   private void clearToolDrawer() {
     appTitleField.setText(null);
     appIdField.setText(null);
@@ -480,14 +586,9 @@ public class AppTabController implements Initializable {
     appStartComboBox.setDisable(true);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private void setValHelper(ComboBoxBase box, Object val) {
-    var handler = box.getOnAction();
-    box.setOnAction(null);
-    box.setValue(val);
-    box.setOnAction(handler);
-  }
-
+  /**
+   * Resets the tool buttons to their default state.
+   */
   void resetToolButtons() {
     editAppBtn.setDisable(true);
     deleteAppBtn.setDisable(true);
@@ -497,6 +598,11 @@ public class AppTabController implements Initializable {
     reportBtn.setSelected(false);
   }
 
+  /**
+   * Makes GUI input elements in the tool drawer editable or not.
+   *
+   * @param isEdit if the input elements should be set as editable
+   */
   private void setToolDrawerEditable(boolean isEdit) {
     appTitleField.setDisable(!isEdit);
     appLocationField.setDisable(!isEdit);
@@ -510,45 +616,12 @@ public class AppTabController implements Initializable {
     appStartComboBox.setDisable(!isEdit);
   }
 
-  private List<ZonedDateTime> getAvailableTimes(Customer customer) {
-    Appointment excludeApp = null;
-    if (editAppBtn.isSelected()) {
-      excludeApp = appTableView.getSelectionModel().getSelectedItem();
-    }
-    var utcEndDt = utcStartDt.plusHours(14);
-    int duration = appDurationComboBox.getValue();
-    List<Appointment> custApps = new ArrayList<>();
-    List<Appointment> tableApps = new ArrayList<>(appTableView.getItems());
-    tableApps.remove(excludeApp);
-    for (var app : tableApps) {
-      if (app.getCustomer().equals(customer) &&
-          app.getStart().toLocalDateTime().toLocalDate().equals(appDatePicker.getValue())) {
-        custApps.add(app);
-      }
-    }
-    List<ZonedDateTime> times = new ArrayList<>();
-    var tempDt = utcStartDt;
-    times.add(tempDt);
-    while (tempDt.isBefore(utcEndDt.minusMinutes(15))) {
-      tempDt = tempDt.plusMinutes(15);
-      times.add(tempDt);
-    }
-    List<ZonedDateTime> outTimes = new ArrayList<>();
-    OUTER:
-    for (var time : times) {
-      if (time.plusMinutes(duration).isAfter(utcEndDt) || time.isBefore(utcStartDt)) {
-        continue;
-      }
-      for (var app : custApps) {
-        if (app.getStart().isBefore(time.plusMinutes(duration)) && app.getEnd().isAfter(time)) {
-          continue OUTER;
-        }
-      }
-      outTimes.add(time);
-    }
-    return outTimes;
-  }
-
+  /**
+   * Opens the tool drawer and populates the GUI elements with data from the provided
+   * <code>appointment</code>.
+   *
+   * @param app the <code>appointment</code> that is to be opened
+   */
   private void openToolDrawer(Appointment app) {
     setCollapseToolDrawer(false);
     if (app == null) {
@@ -578,6 +651,76 @@ public class AppTabController implements Initializable {
     }
   }
 
+  /**
+   * Helper method used to implement a workaround that allows the caller to change the GUI subject's
+   * value without having its <code>onAction</code> event fired.
+   *
+   * @param box the GUI element that will be operated on
+   * @param val the new value that is to be applied to the subject
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private void setValHelper(ComboBoxBase box, Object val) {
+    var handler = box.getOnAction();
+    box.setOnAction(null);
+    box.setValue(val);
+    box.setOnAction(handler);
+  }
+
+  /**
+   * Returns a list of available time slots for the provided <code>customer</code> and
+   * <code>duration</code> selected in the <code>durationComboBox</code>.
+   *
+   * @param customer the meeting attendant
+   * @return the list of available times
+   */
+  private List<ZonedDateTime> getAvailableTimes(Customer customer) {
+    Appointment excludeApp = null;
+    if (editAppBtn.isSelected()) {
+      excludeApp = appTableView.getSelectionModel().getSelectedItem();
+    }
+    var estEndDt = estStartDt.plusHours(14);
+    int duration = appDurationComboBox.getValue();
+    List<Appointment> custApps = new ArrayList<>();
+    List<Appointment> tableApps = new ArrayList<>(appTableView.getItems());
+    tableApps.remove(excludeApp);
+    for (var app : tableApps) {
+      if (app.getCustomer().equals(customer) &&
+          app.getStart().toLocalDateTime().toLocalDate().equals(appDatePicker.getValue())) {
+        custApps.add(app);
+      }
+    }
+    List<ZonedDateTime> times = new ArrayList<>();
+    var tempDt = estStartDt;
+    times.add(tempDt);
+    while (tempDt.isBefore(estEndDt.minusMinutes(15))) {
+      tempDt = tempDt.plusMinutes(15);
+      times.add(tempDt);
+    }
+    List<ZonedDateTime> outTimes = new ArrayList<>();
+    OUTER:
+    for (var time : times) {
+      if (time.plusMinutes(duration).isAfter(estEndDt) || time.isBefore(estStartDt)) {
+        continue;
+      }
+      for (var app : custApps) {
+        if (app.getStart().isBefore(time.plusMinutes(duration)) && app.getEnd().isAfter(time)) {
+          continue OUTER;
+        }
+      }
+      outTimes.add(time);
+    }
+    return outTimes;
+  }
+
+  /**
+   * Filter the list of appointments displayed in the <code>appTableView</code> according to the
+   * specified <code>Mode</code>. Lambda expressions are used to implement the
+   * <code>Predicate</code> interface for the <code>filter</code> stream methods.
+   *
+   * @param list the list to be filtered
+   * @param mode how the list should be filtered
+   * @return the list of <code>appointments</code> post filter
+   */
   private List<Appointment> filterApps(List<Appointment> list, Mode mode) {
     List<Appointment> out = null;
     switch (mode) {
@@ -601,6 +744,12 @@ public class AppTabController implements Initializable {
     return out;
   }
 
+  /**
+   * Dynamically resizes the time bar buttons to fill their parent while maintaining their
+   * individual ratios.
+   *
+   * @param buttons the buttons from the time bar
+   */
   private void calculateTimeBar(ObservableList<Node> buttons) {
     double deltaRat = appTimeBar.getWidth() / timeBarWidth;
     for (var button : buttons) {
@@ -609,11 +758,18 @@ public class AppTabController implements Initializable {
     timeBarWidth = appTimeBar.getWidth();
   }
 
+  /**
+   * Creates buttons in a specific size and order to appear as a single timeline element spanning a
+   * single work day and illustrating a contact's daily appointment schedule.
+   *
+   * @param contact the individual who's schedule will be displayed
+   */
   private void setTimeBar(Contact contact) {
     timeBarWidth = appTimeBar.getWidth();
     appTimeBar.getChildren().clear();
-    ZonedDateTime utcStart = ZonedDateTime
-        .of(LocalDateTime.of(reportDatePicker.getValue(), LocalTime.of(12, 0)), ZoneId.of("UTC"));
+    ZonedDateTime estStart = ZonedDateTime
+        .of(LocalDateTime.of(reportDatePicker.getValue(), LocalTime.of(8, 0)),
+            ZoneId.of("America/New_York"));
     List<Appointment> apps = new ArrayList<>();
     try {
       apps = Database.getAppointments();
@@ -630,8 +786,7 @@ public class AppTabController implements Initializable {
     }
     conApps.sort(Comparator.comparing(Appointment::getStart));
     double timeSlice = timeBarWidth / 56;
-
-    ZonedDateTime timePointer = utcStart;
+    ZonedDateTime timePointer = estStart;
     for (int i = 0; i < conApps.size(); i++) {
       var start = conApps.get(i).getStart();
       var end = conApps.get(i).getEnd();
@@ -688,18 +843,26 @@ public class AppTabController implements Initializable {
       i += skip;
       timePointer = nextApp.getEnd();
     }
-    if (!timePointer.isEqual(utcStart.plusHours(14))) {
+    if (!timePointer.isEqual(estStart.plusHours(14))) {
       Button last = new Button();
       last.setStyle("-fx-background-radius: 0");
       last.setMaxWidth(Double.MAX_VALUE);
       last.setPrefWidth(timeSlice * (Duration
-          .between(conApps.get(conApps.size() - 1).getEnd(), utcStart.plusHours(14)).toMinutes())
+          .between(conApps.get(conApps.size() - 1).getEnd(), estStart.plusHours(14)).toMinutes())
           / 15f);
       last.setDisable(true);
       appTimeBar.getChildren().add(last);
     }
   }
 
+  /**
+   * Marks days on the <code>reportDatePicker</code> that the specified <code>Contact</code> has
+   * appointments on. A lambda is used as an implementation of the <code>Callback</code> interface
+   * to set the cells of the date picker. A lambda also implements the <code>ChangeListener</code>
+   * interface to change the look of the cells when the mouse hovers over them.
+   *
+   * @param contact the individual who's schedule will be displayed
+   */
   private void setReportDatePicker(Contact contact) {
     List<LocalDate> dates = getMarkedDays(contact);
     reportDatePicker.setDayCellFactory(picker -> new DateCell() {
@@ -722,6 +885,13 @@ public class AppTabController implements Initializable {
     });
   }
 
+  /**
+   * Helper method used by <code>setReportDatePicker</code> to get the <code>Appointment</code> list
+   * from the <code>Database</code> class that pertain to the provided <code>Contact</code>.
+   *
+   * @param contact the individual who's schedule will be fetched
+   * @return the list of days
+   */
   private List<LocalDate> getMarkedDays(Contact contact) {
     List<Appointment> apps = new ArrayList<>();
     try {
@@ -738,6 +908,12 @@ public class AppTabController implements Initializable {
     return dates;
   }
 
+  /**
+   * Sets up and populates the month/type line chart in the reporting dashboard.
+   *
+   * @param apps  the list of appointments
+   * @param types the set of appointment type
+   */
   private void setupMonthTypeChart(List<Appointment> apps, Set<String> types) {
     monthTypeChart.getData().clear();
     for (var type : types) {
@@ -802,6 +978,14 @@ public class AppTabController implements Initializable {
     }
   }
 
+  /**
+   * Sets up and populates the month/type line chart in the reporting dashboard. A lambda expression
+   * is used to implement the <code>Runnable</code> interface and submit the task to the database to
+   * fetch the <code>Appointment</code> and <code>Contact</code> records. Two <code>Function</code>
+   * lambda expressions are used by the <code>Collectors.toMap</code> method of the stream that
+   * collects the values of minutes spent in meetings for each <code>Contact</code>A
+   * <code>Runnable</code> lambda is also used to update the pie chart GUI on the JavaFX thread.
+   */
   private void setupPieChart() {
     MainController.getDbService().submit(() -> {
       try {
@@ -825,16 +1009,28 @@ public class AppTabController implements Initializable {
     });
   }
 
+  /**
+   * Gives the <code>Customers</code> tab the ability to add an appointment with the specified
+   * <code>Customer</code>.
+   *
+   * @param cust the <code>Customer</code> that will pre-populate the <code>custComboBox</code>
+   */
   void pushAppointment(Customer cust) {
     appTableView.getSelectionModel().clearSelection();
     resetToolButtons();
-    addAppBtn.setSelected(true);
-    setToolDrawerEditable(true);
-    appConfirmBtnImg.setImage(MainController.getAddImg());
-    openToolDrawer(null);
+    addAppBtn.fire();
     appCustComboBox.getSelectionModel().select(cust);
   }
 
+  /**
+   * Sends a request to the Database class to <code>INSERT</code> a new <code>Appointment</code>
+   * record. A lambda expression is used to implement the <code>Runnable</code> interface and submit
+   * a new task to the database to perform the operation. Three more <code>Runnable</code> lambdas
+   * are nested inside to update GUI components on the JavaFX thread. A notification is displayed to
+   * report the success or failure of the operation.
+   *
+   * @param app the new <code>Appointment</code> that is to be added
+   */
   private void confirmAddApp(Appointment app) {
     mainController.getTableProgress().setVisible(true);
     MainController.getDbService().submit(() -> {
@@ -845,12 +1041,12 @@ public class AppTabController implements Initializable {
           setCollapseToolDrawer(true);
           resetToolButtons();
           populateTable();
-          mainController
-              .notify(resourceBundle.getString("Appointment Added") + ": " + app, NotificationType.ADD, true);
+          mainController.notify(resourceBundle.getString("Appointment Added") + ": " + app,
+              NotificationType.ADD, true);
         });
       } catch (SQLException e) {
-        Platform
-            .runLater(() -> mainController.notify(resourceBundle.getString("Failed to add appointment. Check connection."),
+        Platform.runLater(() -> mainController
+            .notify(resourceBundle.getString("Failed to add appointment. Check connection."),
                 NotificationType.ERROR, false));
       } finally {
         Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
@@ -858,6 +1054,17 @@ public class AppTabController implements Initializable {
     });
   }
 
+  /**
+   * Sends a request to the Database class to <code>UPDATE</code> an <code>Appointment</code>
+   * record. A lambda expression is used to implement the <code>Runnable</code> interface and submit
+   * a new task to the database to perform the operation. Three more <code>Runnable</code> lambdas
+   * are nested inside to update GUI components on the JavaFX thread. A notification is displayed to
+   * report the success or failure of the operation.
+   *
+   * @param newApp   an <code>Appointment</code> object holding the data that is to be copied unto
+   *                 the original
+   * @param original the <code>Appointment</code> that is to be updated
+   */
   private void confirmUpdateApp(Appointment newApp, Appointment original) {
     mainController.getTableProgress().setVisible(true);
     MainController.getDbService().submit(() -> {
@@ -877,14 +1084,24 @@ public class AppTabController implements Initializable {
         });
       } catch (SQLException e) {
         Platform
-            .runLater(() -> mainController.notify(resourceBundle.getString("Failed to update appointment. Check connection."),
-                NotificationType.ERROR, false));
+            .runLater(() -> mainController
+                .notify(resourceBundle.getString("Failed to update appointment. Check connection."),
+                    NotificationType.ERROR, false));
       } finally {
         Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
       }
     });
   }
 
+  /**
+   * Sends a request to the Database class to <code>DELETE</code> an <code>Appointment</code>
+   * record. A lambda expression is used to implement the <code>Runnable</code> interface and submit
+   * a new task to the database to perform the operation. Three more <code>Runnable</code> lambdas
+   * are nested inside to update GUI components on the JavaFX thread. A notification is displayed to
+   * report the success or failure of the operation.
+   *
+   * @param appointment the <code>Appointment</code> that is to be deleted
+   */
   private void confirmDeleteApp(Appointment appointment) {
     mainController.getTableProgress().setVisible(true);
     MainController.getDbService().submit(() -> {
@@ -896,19 +1113,25 @@ public class AppTabController implements Initializable {
           resetToolButtons();
           populateTable();
           mainController
-              .notify(resourceBundle.getString("Appointment Removed") + ": " + appointment, NotificationType.DELETE,
+              .notify(resourceBundle.getString("Appointment Removed") + ": " + appointment,
+                  NotificationType.DELETE,
                   true);
         });
       } catch (SQLException e) {
         Platform
-            .runLater(() -> mainController.notify(resourceBundle.getString("Failed to delete appointment. Check connection."),
-                NotificationType.ERROR, false));
+            .runLater(() -> mainController
+                .notify(resourceBundle.getString("Failed to delete appointment. Check connection."),
+                    NotificationType.ERROR, false));
       } finally {
         Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
       }
     });
   }
 
+  /**
+   * Activates the <code>custConfirmBtn</code> if all the required values are present in the
+   * toolbar's inputs.
+   */
   private void tryActivateConfirmBtn() {
     appConfirmBtn
         .setDisable(appTitleField.getText() == null || appLocationField.getText() == null ||
@@ -919,6 +1142,12 @@ public class AppTabController implements Initializable {
             appUserComboBox.getValue() == null || appDurationComboBox.getValue() == null);
   }
 
+  /////////////////////////Event Handlers//////////////////////////
+
+  /**
+   * Sets the <code>reportDatePicker</code> when an element of the <code>reportingContactBox</code>
+   * is selected.
+   */
   @FXML
   private void onActionReportContactBox() {
     setValHelper(reportDatePicker, null);
@@ -927,11 +1156,17 @@ public class AppTabController implements Initializable {
     setReportDatePicker(reportContactBox.getValue());
   }
 
+  /**
+   * Sets the time bar when a selection is made on the <code>reportDatePicker</code>.
+   */
   @FXML
   private void onActionReportDatePicker() {
     setTimeBar(reportContactBox.getValue());
   }
 
+  /**
+   * Opens the tool drawer when the <code>addAppBtn</code> is selected.
+   */
   @FXML
   private void onActionAddApp() {
     appTableView.getSelectionModel().clearSelection();
@@ -953,12 +1188,14 @@ public class AppTabController implements Initializable {
     }
   }
 
+  /**
+   * Opens the tool drawer when the <code>deleteAppBtn</code> is selected.
+   */
   @FXML
   private void onActionDeleteApp() {
     if (deleteAppBtn.isSelected()) {
       setToolDrawerEditable(false);
       appConfirmBtnImg.setImage(MainController.getDeleteImg());
-
       if (!toolStackPane.getChildren().contains(appGridPane)) {
         reportVbox.setVisible(false);
         toolStackPane.getChildren().remove(reportVbox);
@@ -972,6 +1209,9 @@ public class AppTabController implements Initializable {
     }
   }
 
+  /**
+   * Opens the tool drawer when the <code>editAppBtn</code> is selected.
+   */
   @FXML
   private void onActionEditApp() {
     if (editAppBtn.isSelected()) {
@@ -986,13 +1226,16 @@ public class AppTabController implements Initializable {
         toolStackPane.getChildren().add(appGridPane);
         appGridPane.setVisible(true);
       }
-
       openToolDrawer(appTableView.getSelectionModel().getSelectedItem());
     } else {
       setCollapseToolDrawer(true);
     }
   }
 
+  /**
+   * Opens the tool drawer and changes it's contents to the reporting dashboard when the
+   * <code>reportBtn</code> is selected.
+   */
   @FXML
   private void onActionReport() {
     setReportTimes();
@@ -1019,6 +1262,10 @@ public class AppTabController implements Initializable {
     }
   }
 
+  /**
+   * Enables the <code>durationComboBox</code> when a date is selected in the
+   * <code>appDatePicker</code>.
+   */
   @FXML
   private void onActionDatePicker() {
     if (appDatePicker.getValue() == null) {
@@ -1034,6 +1281,10 @@ public class AppTabController implements Initializable {
     appStartComboBox.setDisable(true);
   }
 
+  /**
+   * Sets up the <code>startComboBox</code> when a selection is made on the
+   * <code>durationComboBox</code> and tries to activate the <code>appConfirmBtn</code>.
+   */
   @FXML
   private void onActionDurationComboBox() {
     appStartComboBox.setDisable(false);
@@ -1041,12 +1292,20 @@ public class AppTabController implements Initializable {
     tryActivateConfirmBtn();
   }
 
+  /**
+   * Tries to activate the <code>appConfirmBtn</code> when a selection is made in the
+   * <code>startComboBox</code>.
+   */
   @FXML
   private void onActionStartComboBox() {
     tryActivateConfirmBtn();
   }
 
 
+  /**
+   * Enables the <code>appDatePicker</code> when a selection is made in the
+   * <code>custComboBox</code>.
+   */
   @FXML
   private void onActionCustComboBox() {
     setValHelper(appDurationComboBox, null);
@@ -1057,26 +1316,46 @@ public class AppTabController implements Initializable {
     appDurationComboBox.setDisable(false);
   }
 
+  /**
+   * Tries to activate the <code>appConfirmBtn</code> when a selection is made in the
+   * <code>contactComboBox</code>.
+   */
   @FXML
   private void onActionContactComboBox() {
     tryActivateConfirmBtn();
   }
 
+  /**
+   * Tries to activate the <code>appConfirmBtn</code> when a selection is made in the
+   * <code>userComboBox</code>.
+   */
   @FXML
   private void onActionUserComboBox() {
     tryActivateConfirmBtn();
   }
 
+  /**
+   * Tries to activate the <code>appConfirmBtn</code> when a selection is made in the
+   * <code>typeComboBox</code>.
+   */
   @FXML
   private void onActionTypeComboBox() {
     tryActivateConfirmBtn();
   }
 
+  /**
+   * Tries to activate the <code>appConfirmBtn</code> whenever a key is typed in any of the toolbar
+   * text fields.
+   */
   @FXML
   private void onKeyTypedAppField() {
     tryActivateConfirmBtn();
   }
 
+  /**
+   * Gathers all the input data from the tool drawer elements and calls the relevant confirm method
+   * when the <code>appConfirmBtn</code> is pressed.
+   */
   @FXML
   private void onActionConfirm() {
     Appointment app = new Appointment();
@@ -1101,6 +1380,14 @@ public class AppTabController implements Initializable {
     }
   }
 
+  /**
+   * Makes a request to the Database class to perform a <code>COMMIT</code> on the database. This
+   * deselects any selected items and closes the tool drawer. A lambda expression is used to
+   * implement the <code>Runnable</code> interface and submit a new task to the database to perform
+   * the <code>COMMIT</code>. Three more <code>Runnable</code> lambdas are nested inside to update
+   * GUI components on the JavaFX thread. A notification is displayed to report the success or
+   * failure of this request.
+   */
   @FXML
   private void onActionRefresh() {
     mainController.getTableProgress().setVisible(true);
@@ -1115,16 +1402,21 @@ public class AppTabController implements Initializable {
         );
       } catch (SQLException e) {
         Platform
-            .runLater(() -> mainController.notify(resourceBundle.getString("Failed to refresh database. Check connection."),
-                NotificationType.ERROR, false)
+            .runLater(() -> mainController
+                .notify(resourceBundle.getString("Failed to refresh database. Check connection."),
+                    NotificationType.ERROR, false)
             );
       } finally {
         Platform.runLater(() -> mainController.getTableProgress().setVisible(false));
       }
     });
-    mainController.refresh();
+    mainController.disableUndo();
   }
 
+  /**
+   * Change how the appointments in the <code>appTableView</code> are filtered and displayed when
+   * the <code>appModeBtn</code> is pressed.
+   */
   @FXML
   private void onActionAppMode() {
     resetToolButtons();
@@ -1146,6 +1438,7 @@ public class AppTabController implements Initializable {
     populateTable();
   }
 
+  //////////////////GUI Components///////////////////////
 
   @FXML
   private AnchorPane storagePane;
@@ -1209,7 +1502,6 @@ public class AppTabController implements Initializable {
 
   @FXML
   private DatePicker appDatePicker;
-
 
   @FXML
   private TextField appIdField;

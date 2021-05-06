@@ -5,6 +5,9 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
+/**
+ * Used to store data relevant to an appointment.
+ */
 public class Appointment {
 
   private int appointmentId;
@@ -19,6 +22,13 @@ public class Appointment {
   private User user;
   private Customer customer;
   private Contact contact;
+
+  /**
+   * Constructs a new blank <code>Appointment</code> object
+   */
+  public Appointment() {
+    super();
+  }
 
   public int getAppointmentId() {
     return appointmentId;
@@ -105,7 +115,9 @@ public class Appointment {
   }
 
   @SuppressWarnings("unused")
-  public int getCustomerId() { return customer.getCustomerId(); }
+  public int getCustomerId() {
+    return customer.getCustomerId();
+  }
 
   public void setCustomer(Customer customer) {
     this.customer = customer;
