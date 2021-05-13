@@ -134,7 +134,7 @@ public class Appointment {
   @Override
   public String toString() {
     DateTimeFormatter dtf = DateTimeFormatter.ofPattern("MM/dd/yyyy h:mm a");
-    return appointmentId + " - " + title + " - " + start.withZoneSameInstant(ZoneId.systemDefault())
+    return appointmentId + " - " + title + " - " + type + " - " + start.withZoneSameInstant(ZoneId.systemDefault())
         .format(dtf)
         + " to " + end.withZoneSameInstant(ZoneId.systemDefault()).format(dtf);
   }

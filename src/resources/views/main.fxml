@@ -21,7 +21,7 @@
         <panes>
           <TitledPane fx:id="notificationBar" text="Notifications">
                <content>
-                  <HBox nodeOrientation="RIGHT_TO_LEFT" prefHeight="100.0" prefWidth="200.0">
+                  <HBox nodeOrientation="RIGHT_TO_LEFT" prefHeight="110.0" prefWidth="200.0">
                      <children>
                         <AnchorPane prefHeight="80.0" prefWidth="170.0" HBox.hgrow="NEVER">
                            <children>
@@ -42,7 +42,7 @@
                         </AnchorPane>
                         <AnchorPane nodeOrientation="LEFT_TO_RIGHT" prefHeight="80.0" prefWidth="474.0" HBox.hgrow="ALWAYS">
                            <children>
-                              <Label fx:id="notificationLbl" layoutX="-56.0" prefHeight="80.0" prefWidth="434.0" text="Customer has been deleted from the database." wrapText="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="32.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                              <Label fx:id="notificationLbl" layoutX="-56.0" prefHeight="80.0" prefWidth="434.0" text="Customer has been updated" wrapText="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="32.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                  <font>
                                     <Font size="24.0" />
                                  </font>

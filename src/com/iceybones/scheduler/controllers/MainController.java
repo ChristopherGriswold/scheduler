@@ -87,6 +87,7 @@ public class MainController implements Initializable {
     custTabController.setMainController(this);
     appTabController.populate();
     custTabController.populate();
+    appTabController.checkForUpcomingApp();
   }
 
   /**
@@ -240,8 +241,8 @@ public class MainController implements Initializable {
       try {
         Database.rollback();
         Platform.runLater(() -> {
-          custTabController.populateTable();
-          appTabController.populateTable();
+          custTabController.populate();
+          appTabController.populate();
           notify(resourceBundle.getString("Undo Successful"), NotificationType.SUCCESS, false);
         });
       } catch (SQLException e) {
